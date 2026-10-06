@@ -1,0 +1,70 @@
+[
+    {
+        "Name": "bridge",
+        "Id": "f47eb2e9734c079415bfff2f572764cb527e5c2f2d700db39d8c8711039d96a8",
+        "Created": "2026-10-06T08:20:23.084508854Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv4": true,
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": null,
+            "Config": [
+                {
+                    "Subnet": "172.17.0.0/16",
+                    "Gateway": "172.17.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Options": {
+            "com.docker.network.bridge.default_bridge": "true",
+            "com.docker.network.bridge.enable_icc": "true",
+            "com.docker.network.bridge.enable_ip_masquerade": "true",
+            "com.docker.network.bridge.host_binding_ipv4": "0.0.0.0",
+            "com.docker.network.bridge.name": "docker0",
+            "com.docker.network.driver.mtu": "1500"
+        },
+        "Labels": {},
+        "Containers": {
+            "053392dced717da91a2e2ad596db94d6fcebde68ae68090bb83d22e0d473a5f8": {
+                "Name": "worker-with-a-really-long-container-name",
+                "EndpointID": "865d12b8e8f1ec69bb2f873ced6eb8f9a96f6e8b24078859a43fc260f09861f7",
+                "MacAddress": "9e:9f:20:4b:ba:1e",
+                "IPv4Address": "172.17.0.3/16",
+                "IPv6Address": ""
+            },
+            "482fda92e935361b7afc41f27ddb7615411ae4ffd78e6735cf16edb50be6ddaa": {
+                "Name": "sick",
+                "EndpointID": "4617fa1a0552c81b895817c5332d17f3c15eee19a0451b467ba91e8c0ea45088",
+                "MacAddress": "a2:4d:78:c9:bd:1e",
+                "IPv4Address": "172.17.0.4/16",
+                "IPv6Address": ""
+            },
+            "a60bbdb5f70a80dab34f530368ba9fd8571562ab8c708b2ff7c572acaa2e47d7": {
+                "Name": "web",
+                "EndpointID": "5adc942983c8958fd992fe74774e2e45fdcdec7f41b273a03be02e924aa1727d",
+                "MacAddress": "d2:39:15:63:dd:e9",
+                "IPv4Address": "172.17.0.2/16",
+                "IPv6Address": ""
+            }
+        },
+        "Status": {
+            "IPAM": {
+                "Subnets": {
+                    "172.17.0.0/16": {
+                        "IPsInUse": 6,
+                        "DynamicIPsAvailable": 65530
+                    }
+                }
+            }
+        }
+    }
+]

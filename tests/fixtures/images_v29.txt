@@ -1,0 +1,4 @@
+IMAGE                                                                ID             DISK USAGE   CONTENT SIZE   EXTRA
+alpine:latest                                                        294b683cb724         13MB         3.94MB   U    
+busybox:latest                                                       fd7dc98638c8       6.81MB         2.23MB        
+registry.example.com:5000/team/alpine-custom-with-long-name:v1.2.3   294b683cb724         13MB         3.94MB   U    

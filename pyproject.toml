@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pprint-docker"
+description = "Readable, colored output for docker commands: tables, live stats, inspect summaries, logs and a dashboard."
+readme = "README.md"
+requires-python = ">=3.7"
+dynamic = ["version"]
+authors = [{ name = "Mamurjon" }]
+keywords = ["docker", "cli", "table", "pretty-print", "swarm"]
+classifiers = [
+    "Environment :: Console",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Systems Administration",
+]
+
+[project.scripts]
+pprint = "pprint_docker.cli:main"
+dpp = "pprint_docker.cli:main"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.dynamic]
+version = { attr = "pprint_docker.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

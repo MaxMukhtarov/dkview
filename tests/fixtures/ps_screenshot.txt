@@ -1,0 +1,3 @@
+CONTAINER ID   IMAGE                                                                                                               COMMAND                  CREATED         STATUS                   PORTS      NAMES
+03086631c564   registry.universalbank.uz/universalbank/transfers/backoffice/api:testing-c5cbfead923c7ff776d60ec52225bff2469235ef   "dotnet Universal.Tr…"   4 minutes ago   Up 4 minutes (healthy)   7100/tcp   transfers-backoffice_backoffice-api.1.mtlr0zxdj8ixu7jorvbanccss
+a645dceba5f4   registry.universalbank.uz/universalbank/transfers/api-v2:dev-consumer-e55edc11695bf0e572164ed49ea7a640b3a1b434      "dotnet Universal.Tr…"   29 hours ago    Up 29 hours                         api-v2_transfers-v2-consumer.1.mjd483b1el2g51jq614djwe2j

@@ -1,0 +1,3 @@
+ID             NAME      MODE         REPLICAS   IMAGE                    PORTS
+mgca4i2paztn   api       replicated   2/2        alpine:latest            *:9000->80/tcp
+o1cs5dpu3fsr   broken    replicated   0/1        alpine:nonexistent-tag   

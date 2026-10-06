@@ -1,0 +1,6 @@
+CONTAINER ID   NAME                                       CPU %     MEM USAGE / LIMIT     MEM %     NET I/O       BLOCK I/O   PIDS
+26a04fd7c376   api.2.c7k29pzjmu2nupzc0hqz83dau            0.00%     576KiB / 15.72GiB     0.00%     336B / 252B   0B / 0B     1
+f0b57a5cf7d3   api.1.s5jbcywkcic84sn8h8563iwv8            0.00%     652KiB / 15.72GiB     0.00%     252B / 252B   0B / 0B     1
+482fda92e935   sick                                       2.64%     912KiB / 15.72GiB     0.01%     168B / 126B   0B / 0B     1
+053392dced71   worker-with-a-really-long-container-name   0.00%     916KiB / 15.72GiB     0.01%     252B / 126B   0B / 0B     2
+a60bbdb5f70a   web                                        0.00%     1.117MiB / 15.72GiB   0.01%     294B / 126B   0B / 0B     1
