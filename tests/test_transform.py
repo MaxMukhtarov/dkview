@@ -25,7 +25,7 @@ def test_compact_age(raw, short):
 
 
 @pytest.mark.parametrize("image, short", [
-    ("registry.universalbank.uz/universalbank/transfers/api-v2:dev", "universalbank/transfers/api-v2:dev"),
+    ("registry.doublewave.uz/doublewave/transfers/api-v2:dev", "doublewave/transfers/api-v2:dev"),
     ("localhost:5000/app:1", "app:1"),
     ("localhost/app", "app"),
     ("library/alpine:3", "library/alpine:3"),

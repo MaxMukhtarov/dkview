@@ -11,7 +11,7 @@ from typing import List, Optional, Sequence
 
 from . import __version__, docker
 from .ansi import colors
-from .features import clean, dashboard, doctor, images, inspect, live, logs, shell, tables
+from .features import clean, dashboard, doctor, errors, images, inspect, live, logs, shell, tables
 from .options import Options
 from .runner import passthrough
 
@@ -29,6 +29,8 @@ examples:
   pprint clean --dry-run           old unused image tags that would be removed
   pprint clean --keep 5            remove them, keeping the newest 5 per repository
   pprint doctor                    failing swarm services with the real error
+  pprint errors                    errors and warnings in all logs, last 30 minutes
+  pprint errors transfers --since 2d   one stack, service or container
   pprint shell-init                make plain "docker ps" use pprint
 
 pprint's own options go before the command. Default options can be set in
@@ -37,7 +39,7 @@ the PPRINT_OPTS environment variable, e.g. PPRINT_OPTS="--short".
 
 
 # Commands that are pprint's own rather than docker's.
-OWN_COMMANDS = {"dash", "clean", "doctor", "shell-init"}
+OWN_COMMANDS = {"dash", "clean", "doctor", "errors", "shell-init"}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -84,6 +86,11 @@ def build_parser() -> argparse.ArgumentParser:
     cleaning.add_argument("-y", "--yes", action="store_true",
                        help="delete without asking")
 
+    logs_group = p.add_argument_group("pprint errors")
+    logs_group.add_argument("--since", metavar="TIME",
+                            help="how far back to read logs: 30m, 6h, 2d, 1w or a date "
+                                 f"(default: {errors.DEFAULT_SINCE})")
+
     out = p.add_argument_group("output")
     out.add_argument("--no-color", action="store_true", help="disable colors")
     out.add_argument("--color", action="store_true",
@@ -112,6 +119,7 @@ def to_options(args: argparse.Namespace) -> Options:
         keep=max(0, args.keep),
         dry_run=args.dry_run,
         yes=args.yes,
+        since=args.since,
     )
 
 
@@ -135,6 +143,9 @@ def run(argv: Sequence[str]) -> int:
     if not command:
         parser.print_help()
         return 2
+
+    if command[0] == "errors":
+        return run_errors(parser, command[1:], opts)
 
     if command[0] in OWN_COMMANDS and len(command) > 1 and command[0] != "shell-init":
         # `pprint clean --keep 5`: options after pprint's own commands are pprint's.
@@ -182,6 +193,37 @@ def run(argv: Sequence[str]) -> int:
     if kind == "table":
         return run_table(command, opts)
     return passthrough(command)
+
+
+def run_errors(parser: argparse.ArgumentParser, rest: List[str], opts: Options) -> int:
+    """`pprint errors [TARGET...]`: targets and options can be mixed freely."""
+    sub = argparse.ArgumentParser(prog="pprint errors", description=errors.__doc__,
+                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub.add_argument("targets", nargs="*", metavar="NAME",
+                     help="stack, service or container name or ID (default: everything)")
+    sub.add_argument("--since", metavar="TIME",
+                     help=f"30m, 6h, 2d, 1w or a date (default: {errors.DEFAULT_SINCE})")
+    sub.add_argument("--grep", metavar="REGEX", help="count only lines matching this")
+    sub.add_argument("--full", action="store_true", help="show every kind of message")
+    sub.add_argument("--width", type=int, help="table width")
+    sub.add_argument("--no-color", action="store_true", help="disable colors")
+    sub.add_argument("--color", action="store_true", help="force colors")
+    args = sub.parse_intermixed_args(rest)
+
+    if args.since:
+        opts.since = args.since
+    if args.grep:
+        try:
+            opts.grep = re.compile(args.grep, re.IGNORECASE)
+        except re.error as error:
+            sub.error(f"--grep: {error}")
+    opts.full = opts.full or args.full
+    opts.width = args.width or opts.width
+    if args.no_color:
+        colors.enabled = False
+    elif args.color:
+        colors.enabled = True
+    return errors.run(["docker"], args.targets, opts)
 
 
 def run_table(command: List[str], opts: Options) -> int:

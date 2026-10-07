@@ -25,3 +25,4 @@ class Options:
     keep: int = 3
     dry_run: bool = False
     yes: bool = False
+    since: Optional[str] = None

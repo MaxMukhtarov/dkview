@@ -1,0 +1,3 @@
+{"ID":"rhl9m97o2vw5","Image":"registry.doublewave.uz/doublewave/transfers/api-v2:dev-e55edc1","Mode":"replicated","Name":"transfers_api","Ports":"","Replicas":"2/2"}
+{"ID":"k2mlq0zs8x1a","Image":"busybox:latest","Mode":"replicated","Name":"transfers_worker","Ports":"","Replicas":"1/1"}
+{"ID":"p9d7c6b5a4e3","Image":"traefik:v3.1","Mode":"global","Name":"traefik","Ports":"*:80->80/tcp","Replicas":"1/1"}

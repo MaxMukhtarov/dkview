@@ -143,7 +143,7 @@ def test_task_parsing():
 def test_hints():
     assert "can't be pulled" in doctor.hint('failed to resolve reference "x"', "api")
     assert "exit 137" in doctor.hint("task: non-zero exit (137)", "api")
-    assert "service logs api" in doctor.hint("task: non-zero exit (3)", "api")
+    assert "pprint errors api" in doctor.hint("task: non-zero exit (3)", "api")
     assert doctor.hint("something else", "api") == ""
 
 

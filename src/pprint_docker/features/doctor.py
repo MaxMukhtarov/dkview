@@ -137,10 +137,10 @@ _HINTS = [
      "node can log in to the registry (deploy with --with-registry-auth)."),
     (r"non-zero exit \(137\)",
      "The container was killed (exit 137): usually out of memory or a failed "
-     "health check. Check memory limits and `pprint service logs {name}`."),
+     "health check. Check memory limits and `pprint errors {name}`."),
     (r"non-zero exit \((\d+)\)",
      "The program inside the container exited with an error. "
-     "See why with `pprint service logs {name}`."),
+     "See why with `pprint errors {name}`."),
     (r"no suitable node",
      "No node matches the service's placement constraints or resources. "
      "Check constraints, labels and reserved CPU/memory."),

@@ -8,8 +8,8 @@ from pprint_docker.styles import styler
 from pprint_docker.table import Table, parse_aligned
 
 SAMPLES = [
-    "registry.universalbank.uz/universalbank/transfers/api-v2:dev-e55edc11695bf0e572164ed49ea7a640b3a1b434",
-    '"dotnet Universal.Transfers.Api.dll"',
+    "registry.doublewave.uz/doublewave/transfers/api-v2:dev-e55edc11695bf0e572164ed49ea7a640b3a1b434",
+    '"dotnet DoubleWave.Transfers.Api.dll"',
     "0.0.0.0:80->80/tcp, :::443->443/tcp",
     "784KiB / 15.72GiB",
     "a",
@@ -76,7 +76,7 @@ def test_empty_table_says_so():
 
 def test_marker_stays_with_the_name_when_wrapping():
     from pprint_docker.layout import wrap_marked
-    lines = wrap_marked("○ universalbank/transfers/api-v2", 20)
-    assert lines[0].startswith("○ universal")
+    lines = wrap_marked("○ doublewave/transfers/api-v2", 20)
+    assert lines[0].startswith("○ doublewave")
     assert all(line.startswith("  ") for line in lines[1:])
     assert all(len(line) <= 20 for line in lines)

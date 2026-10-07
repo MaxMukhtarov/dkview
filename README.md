@@ -19,7 +19,7 @@ $ pprint service ls
 ```
 
 * Repository: https://github.com/MaxMukhtarov/pprint-docker (branch `feature`)
-* Version: 2.2.0
+* Version: 2.3.0
 * Needs: Python 3.7 or newer and the docker CLI. No other packages, no internet.
 
 ---
@@ -126,7 +126,7 @@ code inside it, but `unzip -l dist/pprint` lists what it contains.
 
 ```sh
 type pprint            # should point to ~/bin/pprint (or your chosen path)
-pprint --version       # pprint 2.2.0
+pprint --version       # pprint 2.3.0
 pprint ps              # your containers as a table
 ```
 
@@ -149,6 +149,8 @@ pprint dash                           # one-screen overview of the host
 pprint images --group                 # one row per repository, with sizes
 pprint clean --dry-run                # old unused image tags you could remove
 pprint doctor                         # what is wrong with failing services
+pprint errors                         # errors and warnings in all logs, last 30 minutes
+pprint errors transfers --since 2d    # the same for one stack, service or container
 ```
 
 The word `docker` is optional: `pprint ps -a` and `pprint docker ps -a`
@@ -208,10 +210,10 @@ What pprint does to tables:
   ┌────────────────────────────────────┬─────────────────────────────────────┬──────────────┬─────────┬────────┐
   │ REPOSITORY                         │ TAG                                 │ IMAGE ID     │ CREATED │ SIZE   │
   ├────────────────────────────────────┼─────────────────────────────────────┼──────────────┼─────────┼────────┤
-  │ ● universalbank/transfers/api-v2   │ dev-e55edc11695bf0e572164ed49ea7a64 │ 3a4e72375f57 │ 32h ago │ 432MB  │
+  │ ● doublewave/transfers/api-v2      │ dev-e55edc11695bf0e572164ed49ea7a64 │ 3a4e72375f57 │ 32h ago │ 432MB  │
   │                                    │ 0b3a1b434                           │              │         │        │
-  │ ○ universalbank/transfers/         │ testing-49033ae06da069bca7aacb7ffef │ d8bcc442c9ec │ 2w ago  │ 80.1MB │
-  │ backoffice/ui                      │ 703cd0366dfe0                       │              │         │        │
+  │ ○ doublewave/transfers/backoffice/ │ testing-49033ae06da069bca7aacb7ffef │ d8bcc442c9ec │ 2w ago  │ 80.1MB │
+  │   ui                               │ 703cd0366dfe0                       │              │         │        │
   └────────────────────────────────────┴─────────────────────────────────────┴──────────────┴─────────┴────────┘
   ● used by a container   ○ not used
   ```
@@ -352,22 +354,28 @@ pprint --grep backoffice images --group
 Instead of one row per tag, you get one row per repository, biggest first:
 
 ```
-┌──────────────────────┬──────┬───────────────────────┬────────┬────────┬────────────┬─────────────┐
-│ REPOSITORY           │ TAGS │ NEWEST TAG            │ NEWEST │ IN USE │ TOTAL SIZE │ UNUSED SIZE │
-├──────────────────────┼──────┼───────────────────────┼────────┼────────┼────────────┼─────────────┤
-│ ● universalbank/     │ 4    │ dev-e55edc11695bf0e57 │ 1d ago │ 3 of 4 │ 1.75GB     │ 431MB       │
-│   transfers/api-v2   │      │ 2164ed49ea7a640b3a1b4 │        │        │            │             │
-│                      │      │ 34                    │        │        │            │             │
-│ ● universalbank/     │ 4    │ testing-c5cbfead923c7 │ 4h ago │ 1 of 4 │ 1.12GB     │ 843MB       │
-│   transfers/         │      │ ff776d60ec52225bff246 │        │        │            │             │
-│   backoffice/api     │      │ 9235ef                │        │        │            │             │
-│ ● universalbank/     │ 1    │ v3.7.13               │ 4w ago │ 1 of 1 │ 252MB      │             │
-│   devops/registry/   │      │                       │        │        │            │             │
-│   traefik/traefik    │      │                       │        │        │            │             │
-│ ● universalbank/     │ 2    │ testing-bd55266b6d414 │ 1d ago │ 1 of 2 │ 160MB      │ 80.1MB      │
-│   transfers/         │      │ fb51488f2853f0266b690 │        │        │            │             │
-│   backoffice/ui      │      │ e37b8c                │        │        │            │             │
-└──────────────────────┴──────┴───────────────────────┴────────┴────────┴────────────┴─────────────┘
+┌───────────────────────┬──────┬──────────────────────┬────────┬────────┬────────────┬─────────────┐
+│ REPOSITORY            │ TAGS │ NEWEST TAG           │ NEWEST │ IN USE │ TOTAL SIZE │ UNUSED SIZE │
+├───────────────────────┼──────┼──────────────────────┼────────┼────────┼────────────┼─────────────┤
+│ ● doublewave/         │ 4    │ dev-                 │ 1d ago │ 3 of 4 │ 1.75GB     │ 431MB       │
+│                       │      │ e55edc11695bf0e57    │        │        │            │             │
+│ transfers/api-v2      │      │ 2164ed49ea7a640b3a1b │        │        │            │             │
+│                       │      │ 4                    │        │        │            │             │
+│                       │      │ 34                   │        │        │            │             │
+│ ● doublewave/         │ 4    │ testing-             │ 4h ago │ 1 of 4 │ 1.12GB     │ 843MB       │
+│                       │      │ c5cbfead923c7        │        │        │            │             │
+│ transfers/            │      │ ff776d60ec52225bff24 │        │        │            │             │
+│                       │      │ 6                    │        │        │            │             │
+│ backoffice/api        │      │ 9235ef               │        │        │            │             │
+│ ● doublewave/devops/  │ 1    │ v3.7.13              │ 4w ago │ 1 of 1 │ 252MB      │             │
+│   registry/traefik/   │      │                      │        │        │            │             │
+│   traefik             │      │                      │        │        │            │             │
+│ ● doublewave/         │ 2    │ testing-             │ 1d ago │ 1 of 2 │ 160MB      │ 80.1MB      │
+│                       │      │ bd55266b6d414        │        │        │            │             │
+│ transfers/            │      │ fb51488f2853f0266b69 │        │        │            │             │
+│                       │      │ 0                    │        │        │            │             │
+│ backoffice/ui         │      │ e37b8c               │        │        │            │             │
+└───────────────────────┴──────┴──────────────────────┴────────┴────────┴────────────┴─────────────┘
 ● used by a container   ○ not used
 11 images in 5 repositories, 3.28GB in total, 1.35GB not used
 ```
@@ -406,14 +414,12 @@ It prints the plan first:
 ┌───────────────────────────┬────────────────────────────┬──────────────┬─────────┬───────┬────────┐
 │ REPOSITORY                │ TAG                        │ IMAGE ID     │ CREATED │ SIZE  │ ACTION │
 ├───────────────────────────┼────────────────────────────┼──────────────┼─────────┼───────┼────────┤
-│ ○ universalbank/          │ testing-42095844d514a1f1da │ 4bbfa42b6f2c │ 1w ago  │ 281MB │ delete │
-│   transfers/backoffice/   │ 0572dc0424de4f3b0484f0     │              │         │       │        │
-│   api                     │                            │              │         │       │        │
-│ ○ universalbank/          │ testing-9792faf89378ea4aae │ 44939f22ce0c │ 2w ago  │ 281MB │ delete │
-│   transfers/backoffice/   │ f1f336dd4bafcda106378c     │              │         │       │        │
-│   api                     │                            │              │         │       │        │
-│ ○ universalbank/          │ dev-f2241ba4d16b49ec25c17d │ 78cc88c49346 │ 2d ago  │ 431MB │ delete │
-│   transfers/api-v2        │ 42c92ff7fa1fa561f6         │              │         │       │        │
+│ ○ doublewave/transfers/   │ testing-42095844d514a1f1da │ 4bbfa42b6f2c │ 1w ago  │ 281MB │ delete │
+│   backoffice/api          │ 0572dc0424de4f3b0484f0     │              │         │       │        │
+│ ○ doublewave/transfers/   │ testing-9792faf89378ea4aae │ 44939f22ce0c │ 2w ago  │ 281MB │ delete │
+│   backoffice/api          │ f1f336dd4bafcda106378c     │              │         │       │        │
+│ ○ doublewave/transfers/   │ dev-f2241ba4d16b49ec25c17d │ 78cc88c49346 │ 2d ago  │ 431MB │ delete │
+│   api-v2                  │ 42c92ff7fa1fa561f6         │              │         │       │        │
 └───────────────────────────┴────────────────────────────┴──────────────┴─────────┴───────┴────────┘
 3 images to delete in 2 repositories, up to 993MB freed  (keeping the newest 2 per repository and every image a container uses)
 Delete these 3 images? [y/N]
@@ -462,7 +468,7 @@ Swarm services: 12 healthy · 1 restarting · 1 failing
   4 failed tasks in recent history · now: Running 10s ago
   ...
   → The program inside the container exited with an error. See why with
-    `pprint service logs crashy`.
+    `pprint errors crashy`.
 
 ✓ Healthy
 ┌──────────┬──────────┬──────────────────────────────┐
@@ -484,7 +490,94 @@ default), so "failed tasks in recent history" counts those. `pprint doctor`
 exits with code 1 when any service is failing, so it can be used in
 scripts and monitoring checks.
 
-### 4.10 Everything else
+### 4.10 Errors in logs: `pprint errors`
+
+Reads the logs and tells you what is breaking: errors and warnings are
+counted, and repeats of the same message are grouped, with how often it
+happened and when it was first and last seen.
+
+```sh
+pprint errors                         # every service and container, last 30 minutes
+pprint errors transfers               # one stack (all of its services)
+pprint errors transfers_api           # one service
+pprint errors payments                # one container, by name
+pprint errors 9a8b7c --since 2d       # one container, by ID, last 2 days
+pprint errors transfers payments      # several at once
+pprint errors api --grep timeout      # count only lines matching a pattern
+pprint errors --full                  # every kind of message, not just the top 10
+```
+
+Example:
+
+```
+$ pprint errors
+Errors and warnings, last 30m: 7 errors · 1 warning in 2 of 5 sources
+┌───────────────┬───────────┬────────┬──────────┬────────────┬───────┐
+│ SOURCE        │ KIND      │ ERRORS │ WARNINGS │ LAST ERROR │ LINES │
+├───────────────┼───────────┼────────┼──────────┼────────────┼───────┤
+│ transfers_api │ service   │ 4      │ 1        │ 4m ago     │ 7     │
+│ payments      │ container │ 3      │ 0        │ 4m ago     │ 5     │
+└───────────────┴───────────┴────────┴──────────┴────────────┴───────┘
+✓ nothing in quiet-box, traefik, transfers_worker
+
+✗ transfers_api  service · 4 errors · 1 warning · 3 different messages
+  ┌───────┬───────┬────────┬────────┬──────────────────────────────────────────────────────────┐
+  │ COUNT │ LEVEL │ LAST   │ FIRST  │ MESSAGE                                                  │
+  ├───────┼───────┼────────┼────────┼──────────────────────────────────────────────────────────┤
+  │ 3×    │ error │ 4m ago │ 4m ago │ ERROR Timeout calling http://10.0.3.2:8080/accounts      │
+  │       │       │        │        │ after 30000ms (order 9)                                  │
+  │ 1×    │ error │ 4m ago │ 4m ago │ ERROR Npgsql.NpgsqlException: connection refused         │
+  │ 1×    │ warn  │ 4m ago │ 4m ago │ WARN Retrying payment 5, attempt 2                       │
+  └───────┴───────┴────────┴────────┴──────────────────────────────────────────────────────────┘
+
+✗ payments  container · 3 errors · 2 different messages
+  ┌───────┬───────┬────────┬────────┬──────────────────────────────────────────────────────────┐
+  │ COUNT │ LEVEL │ LAST   │ FIRST  │ MESSAGE                                                  │
+  ├───────┼───────┼────────┼────────┼──────────────────────────────────────────────────────────┤
+  │ 2×    │ error │ 4m ago │ 4m ago │ fail: Payments.Api.Controllers[0] Unhandled exception    │
+  │       │       │        │        │ for request 4f3a194-9c:                                  │
+  │       │       │        │        │ System.InvalidOperationException: Sequence contains no   │
+  │       │       │        │        │ elements                                                 │
+  │ 1×    │ error │ 4m ago │ 4m ago │ System.TimeoutException: The operation has timed out     │
+  └───────┴───────┴────────┴────────┴──────────────────────────────────────────────────────────┘
+```
+
+**What to pass.** Each name can be a stack, a service or a container, by
+name or ID (an ID can be shortened, like docker allows). pprint works out
+which it is. If a stack and a service have the same name, the stack wins.
+With no name, it reads every swarm service plus every container that
+isn't part of a service. A service's own task containers are skipped,
+because the service logs already contain them.
+
+**`--since`.** How far back to read: `30m` (the default), `6h`, `2d`, `1w`,
+`1h30m`, or a date and time like `2026-10-07T09:00`. Days and weeks work
+even though docker itself only understands hours.
+
+**What counts as an error or warning.** Lines with a level word, such as
+`ERROR`, `FATAL`, `CRITICAL`, `fail:` (.NET), `level=error` and
+`"level":"error"`, and the same for `WARN`/`warning`. Lines without a level
+that report an exception (`System.TimeoutException: ...`, a Python
+`Traceback`, a Go `panic:`) count as errors too. The stack trace lines
+below an error (`   at ...`) aren't counted separately.
+
+**How repeats are grouped.** Numbers, IDs, IPs, hashes and timestamps are
+ignored when comparing messages, so `Timeout calling 10.0.3.3 (order 3)` and
+`Timeout calling 10.0.3.6 (order 6)` are the same problem. The table shows
+the most recent example.
+
+**In scripts and cron.** `pprint errors` exits with code 1 when it finds
+any error, 0 when there are none (warnings alone give 0), and 2 when a
+name doesn't exist or `--since` is invalid. For example:
+
+```sh
+pprint --no-color errors transfers --since 1h > /tmp/errors.txt || mail -s "transfers errors" ops@doublewave.uz < /tmp/errors.txt
+```
+
+Reading a long window over many containers can take a while, because
+docker has to send all of those log lines. Narrow it with a name or a
+shorter `--since`.
+
+### 4.11 Everything else
 
 Any command that isn't a table, logs or inspect runs exactly as if you'd
 typed it without `pprint`. That includes `run`, `exec -it`, `build`,
@@ -496,7 +589,7 @@ pprint exec -it web sh      # works normally
 pprint --raw ps             # force plain docker output for a table command
 ```
 
-### 4.11 Non-docker commands
+### 4.12 Non-docker commands
 
 pprint also tries to format other column-aligned output, such as
 `pprint kubectl get pods`. If the output isn't a table, it's printed
@@ -545,6 +638,17 @@ pprint's own options go **before** the command:
 
 `--grep` limits `clean` and `doctor` to matching repositories or services.
 `--full` makes `doctor` list every failed task.
+
+### pprint errors
+
+| Option | What it does |
+| --- | --- |
+| `--since TIME` | How far back to read logs: `30m` (default), `6h`, `2d`, `1w`, or a date. |
+| `--grep REGEX` | Count only log lines matching this. |
+| `--full` | Show every kind of message for each source, not just the top 10. |
+
+Unlike other commands, `pprint errors` accepts its options anywhere:
+`pprint errors api --since 2d` and `pprint --since 2d errors api` are the same.
 
 ### Output
 
@@ -714,6 +818,15 @@ Docker commands that stream (`logs -f`, `events`, `stats`) are handled by
 pprint and stop with Ctrl+C. A non-docker command that never finishes
 will hang, because pprint waits for its output. Use `--raw` for those.
 
+**`pprint errors` shows "! name: Error response from daemon: ... does not support reading"**
+That container or service uses a logging driver docker can't read back
+(for example `syslog` or `gelf` without dual logging). Its logs live in
+that system instead, so pprint can't count them.
+
+**`pprint errors` says "no stack, service or container called ..."**
+Check the name with `pprint service ls`, `pprint stack ls` or
+`pprint ps -a`. Stacks and services are only visible on a swarm manager.
+
 **`--sort` or `--cols` passed to docker by mistake**
 pprint's options must come before the command: `pprint --sort cpu stats`.
 
@@ -783,6 +896,7 @@ pprint/
 │       ├── images.py       in-use marks, image data, images --group
 │       ├── clean.py        pprint clean
 │       ├── doctor.py       pprint doctor
+│       ├── errors.py       pprint errors
 │       └── shell.py        pprint shell-init
 └── tests/
     ├── fixtures/           real docker output recorded for the tests

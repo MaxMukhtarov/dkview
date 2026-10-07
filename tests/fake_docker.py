@@ -19,6 +19,23 @@ def fixture(name: str) -> str:
         return f.read()
 
 
+def errors_scenario(args, words) -> int:
+    """A swarm with a stack "transfers", a lone container and docker's own errors."""
+    if words[:2] == ["service", "ls"]:
+        sys.stdout.write(fixture("errors_services.jsonl"))
+    elif words[:2] == ["stack", "ls"]:
+        sys.stdout.write("transfers\n")
+    elif words[:1] == ["ps"]:
+        sys.stdout.write(fixture("errors_containers.jsonl"))
+    elif words[:2] == ["service", "logs"] or words[:1] == ["logs"]:
+        name = args[-1]
+        if name == "broken-logs":
+            sys.stderr.write("Error response from daemon: configured logging driver does not support reading\n")
+            return 1
+        sys.stdout.write(fixture(f"errors_logs_{name.split('.')[0]}.txt"))
+    return 0
+
+
 def main() -> int:
     args = sys.argv[1:]
     log = os.environ.get("FAKE_DOCKER_LOG")
@@ -32,6 +49,9 @@ def main() -> int:
     # "swarm" serves the second recording: several tags per repository,
     # dangling images and failing services.
     swarm = os.environ.get("FAKE_SCENARIO") == "swarm"
+
+    if os.environ.get("FAKE_SCENARIO") == "errors":
+        return errors_scenario(args, words)
 
     if swarm and cmd[:1] == ["ps"] and "-q" in args:
         sys.stdout.write(fixture("container_ids.txt"))
