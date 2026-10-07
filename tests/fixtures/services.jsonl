@@ -1,0 +1,3 @@
+{"ID":"mgca4i2paztn","Image":"alpine:latest","Mode":"replicated","Name":"api","Ports":"*:9000-\u003e80/tcp","Replicas":"2/2"}
+{"ID":"o1cs5dpu3fsr","Image":"alpine:nonexistent-tag","Mode":"replicated","Name":"broken","Ports":"","Replicas":"0/1"}
+{"ID":"stn6x6enoqdt","Image":"busybox:latest","Mode":"replicated","Name":"crashy","Ports":"","Replicas":"0/1"}

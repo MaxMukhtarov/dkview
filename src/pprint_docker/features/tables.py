@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import sys
 from dataclasses import replace
-from typing import Callable, Sequence, Tuple
+from typing import Callable, Optional, Sequence, Set, Tuple
 
 from .. import docker
 from ..layout import render
@@ -13,6 +13,7 @@ from ..runner import capture
 from ..styles import styler
 from ..table import Table, parse
 from ..transform import ColumnError, grep_rows, select_columns, sort_rows, tidy
+from . import images
 
 
 def build(argv: Sequence[str], opts: Options) -> Tuple[int, str, str]:
@@ -27,16 +28,28 @@ def build(argv: Sequence[str], opts: Options) -> Tuple[int, str, str]:
     if table is None:
         return result.code, result.stdout, result.stderr
 
+    used = None
+    if docker.is_docker(argv) and images.is_image_list(argv):
+        used = images.used_image_ids(argv)
+
     try:
-        table = reshape(table, opts, added_no_trunc="--no-trunc" in prepared[len(argv):])
+        table, marked = reshape(table, opts, used,
+                                added_no_trunc="--no-trunc" in prepared[len(argv):])
     except ColumnError as error:
         return 2, "", f"pprint: {error}\n"
 
-    return result.code, render(table, opts.width, styler) + "\n", result.stderr
+    out = render(table, opts.width, styler) + "\n"
+    if marked and table.rows:
+        out += images.legend() + "\n"
+    return result.code, out, result.stderr
 
 
-def reshape(table: Table, opts: Options, added_no_trunc: bool = False) -> Table:
+def reshape(table: Table, opts: Options, used_images: Optional[Set[str]] = None,
+            added_no_trunc: bool = False) -> Tuple[Table, bool]:
     tidy(table, humanize=False, short=opts.short, strip_digests=added_no_trunc)
+    # Mark before --grep (so `--grep ○` finds unused images) and before
+    # --cols (which may drop the IMAGE ID column the marks rely on).
+    marked = used_images is not None and images.mark_in_use(table, used_images)
     if opts.grep:
         grep_rows(table, opts.grep)
     # Sort on the original values ("4 minutes ago") before compacting them.
@@ -46,7 +59,7 @@ def reshape(table: Table, opts: Options, added_no_trunc: bool = False) -> Table:
         tidy(table, humanize=True, short=False, strip_digests=False)
     if opts.cols:
         table = select_columns(table, opts.cols)
-    return table
+    return table, marked
 
 
 def run(argv: Sequence[str], opts: Options) -> int:

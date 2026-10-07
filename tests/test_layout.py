@@ -72,3 +72,11 @@ def test_empty_table_says_so():
     lines = out.splitlines()
     assert "nothing to show" in out
     assert len({len(line) for line in lines}) == 1
+
+
+def test_marker_stays_with_the_name_when_wrapping():
+    from pprint_docker.layout import wrap_marked
+    lines = wrap_marked("○ universalbank/transfers/api-v2", 20)
+    assert lines[0].startswith("○ universal")
+    assert all(line.startswith("  ") for line in lines[1:])
+    assert all(len(line) <= 20 for line in lines)

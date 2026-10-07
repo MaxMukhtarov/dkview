@@ -11,7 +11,7 @@ from typing import List, Optional, Sequence
 
 from . import __version__, docker
 from .ansi import colors
-from .features import dashboard, inspect, live, logs, shell, tables
+from .features import clean, dashboard, doctor, images, inspect, live, logs, shell, tables
 from .options import Options
 from .runner import passthrough
 
@@ -25,11 +25,19 @@ examples:
   pprint inspect web               short summary; add --full for every field
   pprint --grep timeout logs -f api
   pprint dash                      overview of the whole host (--watch for live)
+  pprint images --group            one row per repository with total sizes
+  pprint clean --dry-run           old unused image tags that would be removed
+  pprint clean --keep 5            remove them, keeping the newest 5 per repository
+  pprint doctor                    failing swarm services with the real error
   pprint shell-init                make plain "docker ps" use pprint
 
 pprint's own options go before the command. Default options can be set in
 the PPRINT_OPTS environment variable, e.g. PPRINT_OPTS="--short".
 """
+
+
+# Commands that are pprint's own rather than docker's.
+OWN_COMMANDS = {"dash", "clean", "doctor", "shell-init"}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -65,6 +73,16 @@ def build_parser() -> argparse.ArgumentParser:
                       help="inspect: show every field as a tree instead of a summary")
     mode.add_argument("--raw", action="store_true",
                       help="run the command untouched")
+    mode.add_argument("--group", action="store_true",
+                      help="images: one row per repository with total and unused size")
+
+    cleaning = p.add_argument_group("pprint clean")
+    cleaning.add_argument("--keep", type=int, default=3, metavar="N",
+                       help="keep the newest N tags of each repository (default: 3)")
+    cleaning.add_argument("--dry-run", action="store_true",
+                       help="only show what would be deleted")
+    cleaning.add_argument("-y", "--yes", action="store_true",
+                       help="delete without asking")
 
     out = p.add_argument_group("output")
     out.add_argument("--no-color", action="store_true", help="disable colors")
@@ -90,6 +108,10 @@ def to_options(args: argparse.Namespace) -> Options:
         once=args.once,
         interval=max(0.5, args.interval),
         full=args.full,
+        group=args.group,
+        keep=max(0, args.keep),
+        dry_run=args.dry_run,
+        yes=args.yes,
     )
 
 
@@ -114,11 +136,16 @@ def run(argv: Sequence[str]) -> int:
         parser.print_help()
         return 2
 
+    if command[0] in OWN_COMMANDS and len(command) > 1 and command[0] != "shell-init":
+        # `pprint clean --keep 5`: options after pprint's own commands are pprint's.
+        before = list(argv)[:len(argv) - len(args.command)]
+        return run(before + command[1:] + [command[0]])
+
+    if command[0] == "clean":
+        return clean.run(["docker"], opts)
+    if command[0] == "doctor":
+        return doctor.run(["docker"], opts)
     if command[0] == "dash":
-        if len(command) > 1:
-            # `pprint dash --watch`: options after "dash" are pprint's own.
-            before = list(argv)[:len(argv) - len(args.command)]
-            return run(before + command[1:] + ["dash"])
         frame = lambda width: dashboard.frame(opts, width)  # noqa: E731
         if opts.watch:
             return live.run(frame, "pprint dash", opts.interval)
@@ -146,6 +173,12 @@ def run(argv: Sequence[str]) -> int:
         if live_stats or opts.watch:
             return live.run(tables.snapshot(command, opts), " ".join(command), opts.interval)
         return tables.run(command, opts)
+    if kind == "table" and images.is_image_list(command):
+        if "--group" in command:  # also accepted after the command
+            command = [a for a in command if a != "--group"]
+            opts.group = True
+        if opts.group:
+            return images.run_group(command, opts)
     if kind == "table":
         return run_table(command, opts)
     return passthrough(command)

@@ -28,20 +28,48 @@ def main() -> int:
 
     words = [a for a in args if not a.startswith("-")]
     cmd = words[:2]
+    json_format = "{{json .}}" in args
+    # "swarm" serves the second recording: several tags per repository,
+    # dangling images and failing services.
+    swarm = os.environ.get("FAKE_SCENARIO") == "swarm"
 
-    if cmd[:1] == ["stats"]:
+    if swarm and cmd[:1] == ["ps"] and "-q" in args:
+        sys.stdout.write(fixture("container_ids.txt"))
+    elif swarm and cmd[:1] == ["inspect"] and "{{.Image}}" in args:
+        sys.stdout.write(fixture("container_images.txt"))
+    elif cmd[:1] == ["images"] and json_format:
+        dangling = "dangling=true" in args
+        sys.stdout.write(fixture("images_dangling.jsonl" if dangling else "images.jsonl"))
+    elif cmd[:1] == ["rmi"]:
+        if "fail" in args[-1]:
+            sys.stderr.write(f"Error response from daemon: conflict: unable to remove {args[-1]}\n")
+            return 1
+        sys.stdout.write(f"Untagged: {args[-1]}\n")
+    elif cmd == ["service", "ls"] and json_format:
+        sys.stdout.write(fixture("services.jsonl"))
+    elif cmd == ["service", "ps"] and json_format:
+        sys.stdout.write(fixture(f"service_ps_{words[2]}.jsonl"))
+    elif cmd == ["service", "inspect"] and json_format:
+        sys.stdout.write(fixture("services_inspect.jsonl"))
+    elif cmd[:1] == ["stats"]:
         if "--no-stream" not in args:
             while True:  # real docker stats never exits on its own
                 time.sleep(1)
         sys.stdout.write(fixture("stats.txt"))
+    elif cmd[:1] == ["ps"] and "-q" in args:
+        sys.stdout.write("c1\nc2\n")
     elif cmd[:1] == ["ps"]:
         sys.stdout.write(fixture("ps_no_trunc.txt"))
+    elif cmd[:1] == ["inspect"] and "--format" in args:
+        # Both containers run alpine (sha256:294b683cb724...).
+        sys.stdout.write("sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6\n" * 2)
     elif cmd == ["service", "ls"]:
         sys.stdout.write(fixture("service_ls.txt"))
     elif cmd == ["service", "ps"]:
         sys.stdout.write(fixture("service_ps.txt"))
-    elif cmd[:1] == ["images"]:
-        sys.stdout.write(fixture("images_v29.txt"))
+    elif cmd[:1] == ["images"] or cmd == ["image", "ls"]:
+        name = "images_legacy.txt" if "--no-trunc" in args else "images_v29.txt"
+        sys.stdout.write(fixture(name))
     elif cmd[:1] == ["inspect"]:
         sys.stdout.write(fixture("inspect_containers.json"))
     elif cmd == ["service", "inspect"]:

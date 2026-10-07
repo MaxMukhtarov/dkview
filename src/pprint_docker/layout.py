@@ -5,11 +5,14 @@ from __future__ import annotations
 import re
 from typing import Callable, List, Optional, Sequence
 
-from .ansi import BOLD, DIM, paint, pad, terminal_width, visible_len
+from .ansi import BOLD, DIM, GREEN, paint, pad, terminal_width, visible_len
 from .table import Table
 
 # (header, cell value) -> ANSI codes for that cell, or None for plain.
 Styler = Callable[[str, str], Optional[str]]
+
+# A leading marker like "● " (image in use) gets its own color.
+MARKERS = {"●": GREEN, "○": DIM}
 
 # Characters after which a long token (image names, paths, port lists)
 # may be broken when it does not fit in its column.
@@ -57,6 +60,19 @@ def wrap_cell(value: str, width: int) -> List[str]:
     if line or not lines:
         lines.append(line)
     return lines
+
+
+def has_marker(value: str) -> bool:
+    return value[:1] in MARKERS and value[1:2] == " "
+
+
+def wrap_marked(value: str, width: int) -> List[str]:
+    """Like wrap_cell, but a leading "● " stays on the first line and the
+    continuation lines are indented to line up under the text."""
+    if not has_marker(value) or width <= 3:
+        return wrap_cell(value, width)
+    lines = wrap_cell(value[2:], width - 2)
+    return [value[:2] + lines[0]] + ["  " + line for line in lines[1:]]
 
 
 def choose_widths(table: Table, max_width: int) -> List[int]:
@@ -119,18 +135,25 @@ def render(table: Table, width: Optional[int] = None,
     bar = paint("│", DIM)
 
     def draw(cells: Sequence[str], header: bool = False) -> List[str]:
-        wrapped = [wrap_cell(cells[i], widths[i]) for i in range(len(widths))]
+        wrapped = [wrap_marked(cells[i], widths[i]) for i in range(len(widths))]
         codes = [
             BOLD if header else (styler(table.headers[i], cells[i]) if styler else None)
             for i in range(len(widths))
         ]
+        marker_cells = [has_marker(c) for c in cells]
         out = []
         for n in range(max(len(c) for c in wrapped)):
             parts = []
             for i, cell_lines in enumerate(wrapped):
                 value = cell_lines[n] if n < len(cell_lines) else ""
+                marker = ""
+                if value[:1] in MARKERS and value[1:2] == " ":
+                    marker, value = paint(value[0], MARKERS[value[0]]) + " ", value[2:]
+                elif n and marker_cells[i]:
+                    marker, value = "  ", value[2:]
                 if codes[i]:
                     value = paint(value, codes[i])
+                value = marker + value
                 parts.append(" " + pad(value, widths[i]) + " ")
             out.append(bar + bar.join(parts) + bar)
         return out

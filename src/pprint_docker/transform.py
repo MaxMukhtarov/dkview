@@ -120,7 +120,7 @@ _SECONDS = {"s": 1, "m": 60, "h": 3600, "d": 86400, "w": 604800,
 
 def sort_key(value: str) -> Tuple[int, float, str]:
     """Order numbers, sizes, percentages and ages by magnitude."""
-    text = value.strip()
+    text = re.sub(r"^[●○] ", "", value.strip())  # image in-use marks
     low = compact_age(text).lower()
 
     m = re.match(r"^(-?\d+(?:\.\d+)?)\s*%", low)

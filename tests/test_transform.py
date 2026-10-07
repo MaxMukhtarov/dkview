@@ -91,3 +91,9 @@ def test_grep_rows():
     t = Table(TABLE.headers, [list(r) for r in TABLE.rows])
     grep_rows(t, re.compile("WEB|cache", re.IGNORECASE))
     assert [r[1] for r in t.rows] == ["web", "cache"]
+
+
+def test_sort_ignores_image_marks():
+    t = Table(["REPOSITORY"], [["○ alpine"], ["● busybox"]])
+    sort_rows(t, "repository")
+    assert [r[0] for r in t.rows] == ["○ alpine", "● busybox"]

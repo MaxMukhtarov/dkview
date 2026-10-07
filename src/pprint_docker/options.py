@@ -21,3 +21,7 @@ class Options:
     once: bool = False
     interval: float = 2.0
     full: bool = False
+    group: bool = False
+    keep: int = 3
+    dry_run: bool = False
+    yes: bool = False

@@ -70,3 +70,32 @@ def test_unknown_objects_fall_back_to_tree():
 def test_tree_shape():
     lines = inspect.tree({"a": 1, "b": {"c": [1, 2], "d": None}})
     assert lines == ["├─ a: 1", "└─ b", "   ├─ c: [1, 2]", "   └─ d: null"]
+
+
+def test_mark_in_use_handles_both_image_layouts():
+    from pprint_docker.features.images import mark_in_use
+    from pprint_docker.table import Table
+
+    legacy = Table(["REPOSITORY", "TAG", "IMAGE ID"], [["alpine", "latest", "294b683cb724"],
+                                                      ["busybox", "latest", "fd7dc98638c8"]])
+    assert mark_in_use(legacy, {"294b683cb724"})
+    assert [r[0] for r in legacy.rows] == ["● alpine", "○ busybox"]
+
+    v29 = Table(["IMAGE", "ID", "DISK USAGE"], [["alpine:latest", "294b683cb724", "13MB"]])
+    assert mark_in_use(v29, set())
+    assert v29.rows[0][0] == "○ alpine:latest"
+
+    assert not mark_in_use(Table(["NAME", "DRIVER"], [["x", "y"]]), set())
+
+
+def test_in_use_dot_is_green():
+    from pprint_docker.ansi import GREEN
+    from pprint_docker.layout import render
+    from pprint_docker.table import Table
+
+    colors.enabled = True
+    try:
+        out = render(Table(["REPOSITORY"], [["● alpine"]]), 40)
+        assert GREEN + "●" in out
+    finally:
+        colors.enabled = False

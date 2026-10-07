@@ -1,3 +1,3 @@
 """pprint: readable, colored output for docker commands."""
 
-__version__ = "2.0.0"
+__version__ = "2.2.0"

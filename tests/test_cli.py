@@ -73,3 +73,24 @@ def test_shell_init(fake_docker):
     result = fake_docker.run("shell-init", "bash")
     assert "command pprint docker" in result.stdout
     assert "[ -t 1 ]" in result.stdout
+
+
+def test_images_mark_the_ones_in_use(fake_docker):
+    result = fake_docker.run("images")
+    rows = [line for line in result.stdout.splitlines() if line.startswith("│ ")][1:]
+    assert any(r.startswith("│ ● alpine") for r in rows)
+    assert any(r.startswith("│ ○ busybox") for r in rows)
+    assert "● used by a container" in result.stdout
+    # Containers are looked up, running and stopped alike.
+    assert ["ps", "-a", "-q", "--no-trunc"] in fake_docker.calls()
+
+
+def test_image_marks_survive_cols(fake_docker):
+    result = fake_docker.run("--cols", "repo,tag", "image", "ls")
+    assert "│ ● alpine" in result.stdout
+
+
+def test_grep_finds_unused_images(fake_docker):
+    result = fake_docker.run("--grep", "○", "images")
+    assert "busybox" in result.stdout
+    assert "│ ● " not in result.stdout
