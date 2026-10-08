@@ -56,7 +56,7 @@ def test_powershell_integration():
 
 def test_output_never_crashes_on_old_code_pages(monkeypatch):
     raw = io.BytesIO()
-    stream = io.TextIOWrapper(raw, encoding="cp1252")
+    stream = io.TextIOWrapper(raw, encoding="cp1252", newline="\n")  # no \r\n on Windows
     monkeypatch.setattr(sys, "stdout", stream)
     ansi.prepare_output()
     sys.stdout.write("● ✓ ┌─┐ ü 漢\n")
