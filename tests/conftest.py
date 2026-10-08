@@ -29,7 +29,7 @@ def fixture_lines():
 
 @pytest.fixture
 def fake_docker(tmp_path):
-    """Put a fake `docker` first on PATH; returns a helper to run dvt."""
+    """Put a fake `docker` first on PATH; returns a helper to run dkview."""
     if os.name == "nt":
         pytest.skip("the fake docker is a shell script")
     bin_dir = tmp_path / "bin"
@@ -45,12 +45,12 @@ def fake_docker(tmp_path):
     env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
     env["PYTHONPATH"] = str(ROOT / "src")
     env["FAKE_DOCKER_LOG"] = str(log)
-    env.pop("DVT_OPTS", None)
+    env.pop("DKVIEW_OPTS", None)
 
     class Runner:
         def run(self, *args, timeout=10, **kw):
             return subprocess.run(
-                [sys.executable, "-m", "dvt", "--no-color", "--width", "120", *args],
+                [sys.executable, "-m", "dkview", "--no-color", "--width", "120", *args],
                 env={**env, **kw.pop("env", {})}, capture_output=True, text=True,
                 timeout=timeout, **kw,
             )

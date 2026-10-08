@@ -1,4 +1,4 @@
-"""`dvt dash`: containers, services, problems and disk use on one screen."""
+"""`dkview dash`: containers, services, problems and disk use on one screen."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from ..options import Options
 from ..runner import capture
 from ..styles import container_status, replicas, styler
 from ..table import Table
-from ..transform import compact_age, short_image, short_task_name
+from ..transform import compact_age, is_task_container, short_image, short_task_name
 
 
 def _json_lines(argv: List[str]) -> Optional[List[Dict[str, Any]]]:
@@ -109,9 +109,13 @@ def frame(opts: Options, width: Optional[int] = None) -> str:
         return paint(f"Cannot reach {engine.name()}. Is it running?", RED) + "\n"
 
     info = (data["info"] or [{}])[0]
-    ps = data["ps"]
     stats = {s.get("ID", "")[:12]: s for s in data["stats"] or []}
     services = data["services"] or []
+    # Swarm keeps the last few dead tasks of every service. Their health is the
+    # service's REPLICAS, so they would only repeat it, many times over.
+    ps = [c for c in data["ps"] if c.get("State") == "running"
+          or not is_task_container(c.get("Names", ""))]
+    old_tasks = len(data["ps"]) - len(ps)
 
     out = [_header(info), _counts(ps), ""]
 
@@ -141,6 +145,9 @@ def frame(opts: Options, width: Optional[int] = None) -> str:
         ])
     out.append(paint("Containers", BOLD))
     out.append(render(containers, width, styler))
+    if old_tasks:
+        out.append(paint(f"{old_tasks} stopped swarm task container{'s' if old_tasks != 1 else ''}"
+                         " not shown; `dkview doctor` explains failed tasks", DIM))
 
     if services:
         table = Table(["NAME", "MODE", "REPLICAS", "IMAGE", "PORTS"])

@@ -1,5 +1,0 @@
-2026-10-07T18:00:02.628368313Z info: Payments.Api[0] Request 2 done
-2026-10-07T18:00:02.628387830Z fail: Payments.Api.Controllers[0] Unhandled exception for request 4f3a2-9c: System.InvalidOperationException: Sequence contains no elements
-2026-10-07T18:00:02.628390000Z       at Payments.Api.Services.Ledger.Find(Guid id)
-2026-10-07T18:00:04.628387830Z fail: Payments.Api.Controllers[0] Unhandled exception for request 4f3a194-9c: System.InvalidOperationException: Sequence contains no elements
-2026-10-07T18:00:07.000000000Z System.TimeoutException: The operation has timed out

@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from dvt.table import Table
-from dvt.transform import (
+from dkview.table import Table
+from dkview.transform import (
     ColumnError, compact_age, find_column, grep_rows, select_columns,
     short_image, short_task_name, sort_key, sort_rows, tidy,
 )
@@ -25,7 +25,7 @@ def test_compact_age(raw, short):
 
 
 @pytest.mark.parametrize("image, short", [
-    ("registry.doublewave.uz/doublewave/transfers/api-v2:dev", "doublewave/transfers/api-v2:dev"),
+    ("registry.doublewave.example/doublewave/orders/api-v2:dev", "doublewave/orders/api-v2:dev"),
     ("localhost:5000/app:1", "app:1"),
     ("localhost/app", "app"),
     ("library/alpine:3", "library/alpine:3"),
@@ -46,19 +46,19 @@ def test_tidy_shortens_ids_and_digests():
 
 
 def test_short_task_name():
-    assert short_task_name("transfers_api.1.rhl9m97o2vw5ojx4gfxs6o2z0") == "transfers_api.1"
-    assert short_task_name("payments") == "payments"
+    assert short_task_name("orders_api.1.rhl9m97o2vw5ojx4gfxs6o2z0") == "orders_api.1"
+    assert short_task_name("checkout") == "checkout"
     assert short_task_name("web.1") == "web.1"
 
 
 def test_tidy_shortens_task_names_only_with_short():
-    rows = [["transfers_api.1.rhl9m97o2vw5ojx4gfxs6o2z0"]]
+    rows = [["orders_api.1.rhl9m97o2vw5ojx4gfxs6o2z0"]]
     table = Table(["NAMES"], [list(rows[0])])
     tidy(table, humanize=True, short=False, strip_digests=False)
     assert table.rows[0] == rows[0]
     table = Table(["NAMES"], [list(rows[0])])
     tidy(table, humanize=True, short=True, strip_digests=False)
-    assert table.rows[0] == ["transfers_api.1"]
+    assert table.rows[0] == ["orders_api.1"]
 
 
 def test_tidy_keeps_a_script_command_on_one_line():

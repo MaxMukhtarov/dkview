@@ -40,7 +40,7 @@ def compact_age(text: str) -> str:
 
 
 def short_image(image: str) -> str:
-    """Drop the registry host: 'registry.example.uz/team/api:v1' -> 'team/api:v1'."""
+    """Drop the registry host: 'registry.example.com/team/api:v1' -> 'team/api:v1'."""
     first, sep, rest = image.partition("/")
     if sep and ("." in first or ":" in first or first == "localhost"):
         return rest
@@ -55,7 +55,12 @@ def one_line(text: str) -> str:
     return " ".join(text.split())
 
 
-_TASK_NAME_RE = re.compile(r"^(.+\.\d+)\.[0-9a-z]{25}$")
+_TASK_NAME_RE = re.compile(r"^(.+\.(?:\d+|[0-9a-z]{25}))\.[0-9a-z]{25}$")  # replicated or global
+
+
+def is_task_container(name: str) -> bool:
+    """A container swarm made for a service task: 'api.1.<25-char task id>'."""
+    return bool(_TASK_NAME_RE.match(name))
 
 
 def short_task_name(name: str) -> str:

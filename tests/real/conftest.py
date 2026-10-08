@@ -5,7 +5,7 @@ services, a stack and containers (all named rt_*) and remove them again.
 Needed images: busybox:latest (load it beforehand on machines without
 internet).
 
-DVT_ENGINE=podman runs them against Podman instead; the swarm parts
+DKVIEW_ENGINE=podman runs them against Podman instead; the swarm parts
 (services, stacks, nodes) are skipped there.
 """
 
@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-ENGINE = os.environ.get("DVT_ENGINE") or "docker"
+ENGINE = os.environ.get("DKVIEW_ENGINE") or "docker"
 PODMAN = Path(ENGINE).name.startswith("podman")
 sys.path.insert(0, str(ROOT / "src"))
 
@@ -28,7 +28,7 @@ version: "3.3"
 services:
   api:
     image: busybox:latest
-    command: ["sh", "-c", "i=0; while true; do i=$$((i+1)); echo \\"INFO request $$i ok\\"; echo \\"ERROR Timeout calling http://10.0.3.$$((i%7)):8080/accounts (order $$i)\\"; [ $$((i%2)) -eq 0 ] && echo \\"WARN Retrying payment $$i\\" >&2; sleep 1; done"]
+    command: ["sh", "-c", "i=0; while true; do i=$$((i+1)); echo \\"INFO request $$i ok\\"; echo \\"ERROR Timeout calling http://10.0.3.$$((i%7)):8080/accounts (order $$i)\\"; [ $$((i%2)) -eq 0 ] && echo \\"WARN Retrying shipment $$i\\" >&2; sleep 1; done"]
     deploy:
       replicas: 2
   worker:
@@ -71,7 +71,7 @@ def host(tmp_path_factory):
     if PODMAN:
         cleanup()
         docker("volume", "create", "rt_data")
-        docker("run", "-d", "--name", "rt_web", "--label", "team=transfers", "busybox:latest",
+        docker("run", "-d", "--name", "rt_web", "--label", "team=orders", "busybox:latest",
                "sh", "-c", "echo 'fail: Web[0] System.InvalidOperationException: no'; sleep 100000")
         docker("run", "--name", "rt_done", "busybox:latest", "sh", "-c", "echo bye")
         yield "podman " + info["version"]["Version"]
@@ -87,7 +87,7 @@ def host(tmp_path_factory):
     docker("stack", "deploy", "-c", str(compose), "rt")
     docker("service", "create", "-d", "--name", "rt_broken", "--restart-max-attempts", "2",
            "--restart-delay", "1s", "busybox:latest", "sh", "-c", "echo boom; exit 3")
-    docker("run", "-d", "--name", "rt_web", "-p", "18080:80", "--label", "team=transfers",
+    docker("run", "-d", "--name", "rt_web", "-p", "18080:80", "--label", "team=orders",
            "busybox:latest", "sh", "-c", "echo 'fail: Web[0] System.InvalidOperationException: no'; sleep 100000")
     docker("run", "--name", "rt_done", "busybox:latest", "sh", "-c", "echo bye")
 

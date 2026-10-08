@@ -47,15 +47,15 @@ jobs:
         env:
           PYTHONPATH: src
         run: |
-          python -m dvt --version
-          python -m dvt --help
-          python -m dvt shell-init powershell
+          python -m dkview --version
+          python -m dkview --help
+          python -m dkview shell-init powershell
 
   podman:
     name: real podman
     runs-on: ubuntu-24.04
     env:
-      DVT_ENGINE: podman
+      DKVIEW_ENGINE: podman
       REAL_DOCKER: "1"
     steps:
       - uses: actions/checkout@v4
@@ -103,3 +103,24 @@ jobs:
       - run: docker pull busybox:latest
       - run: python -m pip install pytest
       - run: python -m pytest -v tests/real
+
+  package:
+    # What PyPI will get: metadata accepted, README renders, the wheel installs
+    # into a clean environment and the `dkview` command runs.
+    name: package build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install build twine
+      - run: make check
+      - run: |
+          python -m venv /tmp/venv
+          /tmp/venv/bin/pip install dist/dkview-[0-9]*.whl
+          /tmp/venv/bin/dkview --version
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/dkview-[0-9]*

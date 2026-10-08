@@ -1,14 +1,14 @@
-# dvt
+# dkview
 
 **Docker and Swarm ops you can read, on servers that have no internet.**
 
-`dvt` is one Python file tree you copy onto a server. It runs the docker
+`dkview` is one Python file tree you copy onto a server. It runs the docker
 command you asked for and prints the answer as a width-fitted, colored table,
 and it adds the few views an operator actually wants at 3am: what is broken,
 what is in the logs, and what the host is doing right now. Nothing to install,
 no agent, no daemon, no network access, no root.
 
-![dvt in a terminal: ps, errors, doctor and dash](docs/demo.gif)
+![dkview in a terminal: ps, errors, doctor and dash](https://raw.githubusercontent.com/MaxMukhtarov/pprint-docker/feature/docs/demo.gif)
 
 ## Why it exists
 
@@ -20,24 +20,24 @@ graphical tools that fix this (Portainer, Swarmpit, Grafana) all want a
 container, a port, a login and usually internet access, which is exactly what
 these machines don't have.
 
-`dvt` takes the other route: a single command on the server you are already
+`dkview` takes the other route: a single command on the server you are already
 logged into.
 
 ```
-$ dvt doctor
+$ dkview doctor
 Swarm services: 4 healthy · 1 failing
 
-✗ billing_report  0/1 replicas · registry.doublewave.uz/doublewave/billing/report:nonexistent-tag
-  5 failed tasks in recent history · now: Rejected 3s ago
+✗ reports_export  0/1 replicas · registry.doublewave.example/doublewave/reports/export:nonexistent-tag
+  5 failed tasks in recent history · now: Rejected 1s ago
   ┌───────┬──────────┬────────┬───────┬────────────────────────────────────────────────┐
   │ TIMES │ STATE    │ LAST   │ NODES │ ERROR                                          │
   ├───────┼──────────┼────────┼───────┼────────────────────────────────────────────────┤
-  │ 5×    │ Rejected │ 3s ago │ vm    │ failed to resolve reference "registry.         │
-  │       │          │        │       │ doublewave.uz/doublewave/billing/report:       │
+  │ 5×    │ Rejected │ 1s ago │ vm    │ failed to resolve reference "registry.         │
+  │       │          │        │       │ doublewave.example/doublewave/reports/export:  │
   │       │          │        │       │ nonexistent-tag": failed to do request: Head   │
-  │       │          │        │       │ "https://registry.doublewave.uz/v2/doublewave/ │
-  │       │          │        │       │ billing/report/manifests/nonexistent-tag":     │
-  │       │          │        │       │ Forbidden                                      │
+  │       │          │        │       │ "https://registry.doublewave.example/v2/       │
+  │       │          │        │       │ doublewave/reports/export/manifests/           │
+  │       │          │        │       │ nonexistent-tag": Forbidden                    │
   └───────┴──────────┴────────┴───────┴────────────────────────────────────────────────┘
   → The image can't be pulled. Check the image name and tag, and that the node can
     log in to the registry (deploy with --with-registry-auth).
@@ -51,26 +51,30 @@ times.
 
 | Command | Answers |
 |---|---|
-| `dvt doctor` | Which services are failing, and why, with the repeated task errors grouped and a plain-language hint |
-| `dvt errors` | What errors and warnings appeared in every service and container log in the last 30 minutes, grouped so 190 identical timeouts are one row |
-| `dvt dash` | One screen: host, containers, services, disk, and what needs attention |
+| `dkview doctor` | Which services are failing, and why, with the repeated task errors grouped and a plain-language hint |
+| `dkview errors` | What errors and warnings appeared in every service and container log in the last 30 minutes, grouped so 190 identical timeouts are one row |
+| `dkview dash` | One screen: host, containers, services, disk, and what needs attention |
 
 Everything else is plain docker, only readable:
 
 ```
-$ dvt --short service ls
-┌──────────────┬──────────────────┬────────────┬──────────┬───────────────────────┬────────────────┐
-│ ID           │ NAME             │ MODE       │ REPLICAS │ IMAGE                 │ PORTS          │
-├──────────────┼──────────────────┼────────────┼──────────┼───────────────────────┼────────────────┤
-│ asp8ftlsjz63 │ billing_report   │ replicated │ 0/1      │ doublewave/billing/   │                │
-│              │                  │            │          │ report:nonexistent-   │                │
-│              │                  │            │          │ tag                   │                │
-│ o2bhjctpc1ss │ traefik          │ replicated │ 1/1      │ doublewave/devops/    │ *:8080->80/tcp │
-│              │                  │            │          │ registry/traefik:v3.  │                │
-│              │                  │            │          │ 7.13                  │                │
-│ qbrn32zkgop7 │ transfers_api    │ replicated │ 2/2      │ doublewave/transfers/ │ *:9000->80/tcp │
-│              │                  │            │          │ api:testing-c5cbfead  │                │
-└──────────────┴──────────────────┴────────────┴──────────┴───────────────────────┴────────────────┘
+$ dkview --short service ls
+┌──────────────┬────────────────┬────────────┬──────────┬─────────────────────────┬────────────────┐
+│ ID           │ NAME           │ MODE       │ REPLICAS │ IMAGE                   │ PORTS          │
+├──────────────┼────────────────┼────────────┼──────────┼─────────────────────────┼────────────────┤
+│ 62a8mq5mjqle │ orders_api     │ replicated │ 2/2      │ doublewave/orders/api:  │ *:9000->80/tcp │
+│              │                │            │          │ testing-7f3a91c2        │                │
+│ cs9u44vdh87e │ orders_ui      │ replicated │ 1/1      │ doublewave/orders/      │                │
+│              │                │            │          │ storefront/ui:testing-  │                │
+│              │                │            │          │ 2b6e04d9                │                │
+│ ytqehc69azr0 │ orders_worker  │ replicated │ 1/1      │ doublewave/orders/      │                │
+│              │                │            │          │ worker:testing-7f3a91c2 │                │
+│ zohugg8brmnu │ reports_export │ replicated │ 0/1      │ doublewave/reports/     │                │
+│              │                │            │          │ export:nonexistent-tag  │                │
+│ s0cgev2u7x6z │ traefik        │ replicated │ 1/1      │ doublewave/devops/      │ *:8080->80/tcp │
+│              │                │            │          │ registry/traefik:v3.7.  │                │
+│              │                │            │          │ 13                      │                │
+└──────────────┴────────────────┴────────────┴──────────┴─────────────────────────┴────────────────┘
 ```
 
 Red means a service is missing replicas, green means it is complete. Commands
@@ -87,8 +91,8 @@ It is also fine on a laptop with Docker Desktop or Podman, but there the
 graphical tools are right there, so you will get less out of it.
 
 * Repository: https://github.com/MaxMukhtarov/pprint-docker (branch `feature`)
-* Version: 3.0.0b3 (until 2.4.1 this tool was called **pprint**; see
-  [Switching from pprint](#switching-from-pprint))
+* Version: 3.0.0b5 (up to 2.4.1 this tool was called **pprint**, and the 3.0 betas
+  up to 3.0.0b4 were called **dvt**; see [Switching from pprint or dvt](#switching-from-pprint-or-dvt))
 * Needs: Python 3.7 or newer, and Docker 20.10 or newer or Podman 4 or newer. No other
   packages, no internet. Works on Linux, macOS and Windows (Docker Desktop).
 * Install on a server with no internet: [method A](#a-from-the-source-archive-no-internet-needed-recommended-for-servers),
@@ -104,7 +108,7 @@ graphical tools are right there, so you will get less out of it.
 4. [Commands](#4-commands)
 5. [Options](#5-options)
 6. [Colors](#6-colors)
-7. [Make plain `docker` use dvt](#7-make-plain-docker-use-dvt)
+7. [Make plain `docker` use dkview](#7-make-plain-docker-use-dkview)
 8. [Default options](#8-default-options)
 9. [Update](#9-update)
 10. [Uninstall](#10-uninstall)
@@ -127,21 +131,21 @@ python3 --version        # must be 3.7 or newer
 
 ### A. From the source archive, no internet needed (recommended for servers)
 
-Copy `dvt-source.tar.gz` (or `dvt-source.zip`) to the server, then:
+Copy `dkview-source.tar.gz` (or `dkview-source.zip`) to the server, then:
 
 ```sh
-# 1. Unpack into your home folder. This creates ~/dvt
-tar -xzf dvt-source.tar.gz -C ~
+# 1. Unpack into your home folder. This creates ~/dkview
+tar -xzf dkview-source.tar.gz -C ~
 #   or, for the zip (no unzip command needed):
-#   python3 -m zipfile -e dvt-source.zip ~
+#   python3 -m zipfile -e dkview-source.zip ~
 
-# 2. Create the `dvt` command
+# 2. Create the `dkview` command
 mkdir -p ~/bin
-cat > ~/bin/dvt <<'EOF'
+cat > ~/bin/dkview <<'EOF'
 #!/bin/sh
-PYTHONPATH="$HOME/dvt/src" exec python3 -m dvt "$@"
+PYTHONPATH="$HOME/dkview/src" exec python3 -m dkview "$@"
 EOF
-chmod +x ~/bin/dvt
+chmod +x ~/bin/dkview
 
 # 3. Make sure ~/bin is on your PATH (already true on RHEL/CentOS)
 echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/bin" \
@@ -153,60 +157,72 @@ To install it for **every user** on the machine, unpack it into `/opt`
 and put the command in `/usr/local/bin` instead:
 
 ```sh
-sudo tar -xzf dvt-source.tar.gz -C /opt
-sudo tee /usr/local/bin/dvt >/dev/null <<'EOF'
+sudo tar -xzf dkview-source.tar.gz -C /opt
+sudo tee /usr/local/bin/dkview >/dev/null <<'EOF'
 #!/bin/sh
-PYTHONPATH="/opt/dvt/src" exec python3 -m dvt "$@"
+PYTHONPATH="/opt/dkview/src" exec python3 -m dkview "$@"
 EOF
-sudo chmod +x /usr/local/bin/dvt
+sudo chmod +x /usr/local/bin/dkview
 ```
 
 ### B. From GitHub (machines with access to GitHub)
 
 ```sh
-git clone -b feature https://github.com/MaxMukhtarov/pprint-docker.git ~/dvt
+git clone -b feature https://github.com/MaxMukhtarov/pprint-docker.git ~/dkview
 ```
 
-Then do step 2 of method A to create the `~/bin/dvt` command.
+Then do step 2 of method A to create the `~/bin/dkview` command.
 
 ### C. With pip
 
+From PyPI, on a machine with internet access:
+
 ```sh
-cd ~/dvt
+python3 -m pip install --user dkview      # or: pipx install dkview
+```
+
+From the unpacked source archive, with no internet:
+
+```sh
+cd ~/dkview
 python3 -m pip install --user .
 ```
 
-This installs the `dvt` command into `~/.local/bin`. Make sure
-`~/.local/bin` is on your PATH. (On PyPI the package is called
-`dvt-docker`, because the name `dvt` belongs to another project.)
+Either way the `dkview` command lands in `~/.local/bin`. Make sure
+`~/.local/bin` is on your PATH.
+
+To bring the PyPI package onto an offline server, download the wheel
+on a machine that has internet (`python3 -m pip download dkview
+--no-deps -d .`), copy the `.whl` file over, and run
+`python3 -m pip install --user dkview-*.whl` there.
 
 ### D. As one single file
 
 On a machine that has `make` and the source:
 
 ```sh
-cd ~/dvt
-make zipapp                      # builds dist/dvt
+cd ~/dkview
+make zipapp                      # builds dist/dkview
 ```
 
-`dist/dvt` is a compressed archive of the code that Python runs
+`dist/dkview` is a compressed archive of the code that Python runs
 directly. Copy it anywhere, `chmod +x` it, and run it. You can't read the
-code inside it, but `unzip -l dist/dvt` lists what it contains.
+code inside it, but `unzip -l dist/dkview` lists what it contains.
 
 ### Podman
 
-dvt works with Podman the same way. If `docker` isn't installed and
-`podman` is, dvt uses podman by itself. To choose explicitly, set
-`DVT_ENGINE` or name the program:
+dkview works with Podman the same way. If `docker` isn't installed and
+`podman` is, dkview uses podman by itself. To choose explicitly, set
+`DKVIEW_ENGINE` or name the program:
 
 ```sh
-export DVT_ENGINE=podman          # every dvt command uses podman
-dvt podman ps                     # just this once
+export DKVIEW_ENGINE=podman          # every dkview command uses podman
+dkview podman ps                     # just this once
 ```
 
 Everything works except what needs Docker Swarm, which Podman doesn't
-have: `service`, `stack` and `node` commands, and `dvt doctor` (it says so
-and exits). `dvt errors` reads container logs as usual.
+have: `service`, `stack` and `node` commands, and `dkview doctor` (it says so
+and exits). `dkview errors` reads container logs as usual.
 
 ### Docker Desktop (macOS and Windows)
 
@@ -215,46 +231,46 @@ the commands in PowerShell, and use `py -m pip install --user .` if
 `python3` isn't found. Then:
 
 ```sh
-dvt ps
+dkview ps
 ```
 
 Colors work in Windows Terminal and the Windows 10+ console. Where the
 output can't show box lines and symbols (an old console, or output saved
-to a file with a legacy code page), dvt draws them with `+ - |` instead.
-To make plain `docker` use dvt in PowerShell, see section 7.
+to a file with a legacy code page), dkview draws them with `+ - |` instead.
+To make plain `docker` use dkview in PowerShell, see section 7.
 
 ---
 
 ## 2. Check that it works
 
 ```sh
-type dvt            # should point to ~/bin/dvt (or your chosen path)
-dvt --version       # dvt 3.0.0b3
-dvt ps              # your containers as a table
+type dkview            # should point to ~/bin/dkview (or your chosen path)
+dkview --version       # dkview 3.0.0b5
+dkview ps              # your containers as a table
 ```
 
-If you used **pprint** before, follow
-[Switching from pprint](#switching-from-pprint) to remove the old command.
+If you used **pprint** or a **dvt** beta before, follow
+[Switching from pprint or dvt](#switching-from-pprint-or-dvt) to remove the old command.
 
 ---
 
 ## 3. Quick start
 
 ```sh
-dvt ps -a                          # all containers
-dvt service ls                     # swarm services, replicas colored
-dvt stats                          # live CPU/memory view, Ctrl+C to quit
-dvt inspect <container>            # short summary of one container
-dvt logs -f <container>            # colored logs
-dvt dash                           # one-screen overview of the host
-dvt images --group                 # one row per repository, with sizes
-dvt clean --dry-run                # old unused image tags you could remove
-dvt doctor                         # what is wrong with failing services
-dvt errors                         # errors and warnings in all logs, last 30 minutes
-dvt errors transfers --since 2d    # the same for one stack, service or container
+dkview ps -a                          # all containers
+dkview service ls                     # swarm services, replicas colored
+dkview stats                          # live CPU/memory view, Ctrl+C to quit
+dkview inspect <container>            # short summary of one container
+dkview logs -f <container>            # colored logs
+dkview dash                           # one-screen overview of the host
+dkview images --group                 # one row per repository, with sizes
+dkview clean --dry-run                # old unused image tags you could remove
+dkview doctor                         # what is wrong with failing services
+dkview errors                         # errors and warnings in all logs, last 30 minutes
+dkview errors orders --since 2d    # the same for one stack, service or container
 ```
 
-The word `docker` is optional: `dvt ps -a` and `dvt docker ps -a`
+The word `docker` is optional: `dkview ps -a` and `dkview docker ps -a`
 are the same.
 
 ---
@@ -276,18 +292,18 @@ These docker commands are shown as tables:
 Examples:
 
 ```sh
-dvt ps -a
-dvt ps --filter status=exited
-dvt images
-dvt service ps api
-dvt node ls
-dvt system df
-dvt compose -f docker-compose.prod.yml ps
+dkview ps -a
+dkview ps --filter status=exited
+dkview images
+dkview service ps api
+dkview node ls
+dkview system df
+dkview compose -f docker-compose.prod.yml ps
 ```
 
-What dvt does to tables:
+What dkview does to tables:
 
-* **Nothing is cut off.** For commands that support it, dvt asks
+* **Nothing is cut off.** For commands that support it, dkview asks
   docker for full values (`--no-trunc`) so COMMAND, ERROR and similar
   columns aren't shortened with `…`. Long values wrap inside their cell
   instead, breaking after `/ : - _ .` rather than mid-word. The one
@@ -310,24 +326,24 @@ What dvt does to tables:
   is printed under the table.
 
   ```
-  $ dvt --short images
-  ┌────────────────────────────────────┬─────────────────────────────────────┬──────────────┬─────────┬────────┐
-  │ REPOSITORY                         │ TAG                                 │ IMAGE ID     │ CREATED │ SIZE   │
-  ├────────────────────────────────────┼─────────────────────────────────────┼──────────────┼─────────┼────────┤
-  │ ● doublewave/transfers/api-v2      │ dev-e55edc11695bf0e572164ed49ea7a64 │ 3a4e72375f57 │ 32h ago │ 432MB  │
-  │                                    │ 0b3a1b434                           │              │         │        │
-  │ ○ doublewave/transfers/backoffice/ │ testing-49033ae06da069bca7aacb7ffef │ d8bcc442c9ec │ 2w ago  │ 80.1MB │
-  │   ui                               │ 703cd0366dfe0                       │              │         │        │
-  └────────────────────────────────────┴─────────────────────────────────────┴──────────────┴─────────┴────────┘
+  $ dkview --short images
+  ┌──────────────────────────────────┬───────────────────────────────────┬──────────────┬─────────┬────────┐
+  │ REPOSITORY                       │ TAG                               │ IMAGE ID     │ CREATED │ SIZE   │
+  ├──────────────────────────────────┼───────────────────────────────────┼──────────────┼─────────┼────────┤
+  │ ● doublewave/orders/api-v2       │ dev-86f7e437faa5a7fce15d1ddcb9eae │ f29bc91bbdab │ 32h ago │ 432MB  │
+  │                                  │ aea377667b8                       │              │         │        │
+  │ ○ doublewave/orders/storefront/  │ testing-e9d71f5ee7c92d6dc9e92ffda │ 7e83ca2a65d6 │ 2w ago  │ 80.1MB │
+  │   ui                             │ d17b8bd49418f98                   │              │         │        │
+  └──────────────────────────────────┴───────────────────────────────────┴──────────────┴─────────┴────────┘
   ● used by a container   ○ not used
   ```
 
-  To list only the unused ones: `dvt --grep ○ images`.
+  To list only the unused ones: `dkview --grep ○ images`.
 
 Example:
 
 ```
-$ dvt --short --cols name,status,image ps -a
+$ dkview --short --cols name,status,image ps -a
 ┌──────────────────────────────────────────┬───────────────────┬───────────────┐
 │ NAMES                                    │ STATUS            │ IMAGE         │
 ├──────────────────────────────────────────┼───────────────────┼───────────────┤
@@ -340,33 +356,33 @@ $ dvt --short --cols name,status,image ps -a
 ### 4.2 Live stats
 
 ```sh
-dvt stats                      # live view, refreshes every 2 seconds
-dvt --sort cpu --desc stats    # busiest containers at the top
-dvt -n 5 stats                 # refresh every 5 seconds
-dvt --once stats               # print one snapshot and exit
+dkview stats                      # live view, refreshes every 2 seconds
+dkview --sort cpu --desc stats    # busiest containers at the top
+dkview -n 5 stats                 # refresh every 5 seconds
+dkview --once stats               # print one snapshot and exit
 ```
 
-Plain `docker stats` never exits, so dvt takes one sample at a time
+Plain `docker stats` never exits, so dkview takes one sample at a time
 (`--no-stream`) and redraws the screen in place, like `top`. Press
-**Ctrl+C** to quit. When the output goes to a file or a pipe, dvt
+**Ctrl+C** to quit. When the output goes to a file or a pipe, dkview
 prints a single snapshot instead.
 
 ### 4.3 Watch any table
 
 ```sh
-dvt --watch service ls         # watch a deploy roll out
-dvt --watch ps -a
-dvt -w -n 1 service ps api     # every second
+dkview --watch service ls         # watch a deploy roll out
+dkview --watch ps -a
+dkview -w -n 1 service ps api     # every second
 ```
 
 ### 4.4 inspect
 
 ```sh
-dvt inspect web                # summary of a container
-dvt inspect web db cache       # several at once
-dvt image inspect alpine       # summary of an image
-dvt service inspect api        # summary of a swarm service
-dvt --full inspect web         # every field, as a colored tree
+dkview inspect web                # summary of a container
+dkview inspect web db cache       # several at once
+dkview image inspect alpine       # summary of an image
+dkview service inspect api        # summary of a swarm service
+dkview --full inspect web         # every field, as a colored tree
 ```
 
 The summary shows what you usually look for:
@@ -394,17 +410,17 @@ Environment  (1)
 For an unhealthy container the summary also shows the output of the last
 failed health check. Other objects (networks, volumes, nodes...) are shown
 as a tree. Use `--format` to get docker's raw output, for example
-`dvt inspect --format '{{.State.Status}}' web`.
+`dkview inspect --format '{{.State.Status}}' web`.
 
 ### 4.5 Logs
 
 ```sh
-dvt logs web                           # all logs, colored
-dvt logs -f --tail 100 web             # follow, last 100 lines
-dvt --grep error logs web              # only lines matching "error"
-dvt --grep 'timeout|refused' logs -f api
-dvt service logs -f api                # swarm service logs
-dvt compose logs -f                    # compose logs, one color per service
+dkview logs web                           # all logs, colored
+dkview logs -f --tail 100 web             # follow, last 100 lines
+dkview --grep error logs web              # only lines matching "error"
+dkview --grep 'timeout|refused' logs -f api
+dkview service logs -f api                # swarm service logs
+dkview compose logs -f                    # compose logs, one color per service
 ```
 
 * Lines with ERROR, FATAL, PANIC or FAIL are red, WARN lines are yellow,
@@ -418,9 +434,9 @@ dvt compose logs -f                    # compose logs, one color per service
 ### 4.6 Dashboard
 
 ```sh
-dvt dash               # one snapshot
-dvt dash --watch       # live, refreshes every 2 seconds
-dvt --short dash       # without registry hosts in image names
+dkview dash               # one snapshot
+dkview dash --watch       # live, refreshes every 2 seconds
+dkview --short dash       # without registry hosts in image names
 ```
 
 ```
@@ -447,39 +463,39 @@ Problem containers are listed first. When nothing is wrong, the
 "✓ Everything is running and healthy". The Services section only appears
 on swarm managers.
 
+Swarm keeps the last few stopped containers of every service task (after a
+crash, an update or a daemon restart). They are left out of `dash`, with a
+one-line count under the table, because the service's REPLICAS already says
+whether it is healthy. `dkview doctor` explains the ones that failed, and
+`dkview ps -a` still lists them all.
+
 ### 4.7 Images grouped by repository
 
 ```sh
-dvt images --group                 # one row per repository
-dvt --short images --group         # without the registry host
-dvt --grep backoffice images --group
+dkview images --group                 # one row per repository
+dkview --short images --group         # without the registry host
+dkview --grep storefront images --group
 ```
 
 Instead of one row per tag, you get one row per repository, biggest first:
 
 ```
-┌───────────────────────┬──────┬──────────────────────┬────────┬────────┬────────────┬─────────────┐
-│ REPOSITORY            │ TAGS │ NEWEST TAG           │ NEWEST │ IN USE │ TOTAL SIZE │ UNUSED SIZE │
-├───────────────────────┼──────┼──────────────────────┼────────┼────────┼────────────┼─────────────┤
-│ ● doublewave/         │ 4    │ dev-                 │ 1d ago │ 3 of 4 │ 1.75GB     │ 431MB       │
-│                       │      │ e55edc11695bf0e57    │        │        │            │             │
-│ transfers/api-v2      │      │ 2164ed49ea7a640b3a1b │        │        │            │             │
-│                       │      │ 4                    │        │        │            │             │
-│                       │      │ 34                   │        │        │            │             │
-│ ● doublewave/         │ 4    │ testing-             │ 4h ago │ 1 of 4 │ 1.12GB     │ 843MB       │
-│                       │      │ c5cbfead923c7        │        │        │            │             │
-│ transfers/            │      │ ff776d60ec52225bff24 │        │        │            │             │
-│                       │      │ 6                    │        │        │            │             │
-│ backoffice/api        │      │ 9235ef               │        │        │            │             │
-│ ● doublewave/devops/  │ 1    │ v3.7.13              │ 4w ago │ 1 of 1 │ 252MB      │             │
-│   registry/traefik/   │      │                      │        │        │            │             │
-│   traefik             │      │                      │        │        │            │             │
-│ ● doublewave/         │ 2    │ testing-             │ 1d ago │ 1 of 2 │ 160MB      │ 80.1MB      │
-│                       │      │ bd55266b6d414        │        │        │            │             │
-│ transfers/            │      │ fb51488f2853f0266b69 │        │        │            │             │
-│                       │      │ 0                    │        │        │            │             │
-│ backoffice/ui         │      │ e37b8c               │        │        │            │             │
-└───────────────────────┴──────┴──────────────────────┴────────┴────────┴────────────┴─────────────┘
+┌──────────────────────┬──────┬──────────────────────┬────────┬────────┬────────────┬─────────────┐
+│ REPOSITORY           │ TAGS │ NEWEST TAG           │ NEWEST │ IN USE │ TOTAL SIZE │ UNUSED SIZE │
+├──────────────────────┼──────┼──────────────────────┼────────┼────────┼────────────┼─────────────┤
+│ ● doublewave/orders/ │ 4    │ dev-84a516841ba77a5b │ 1d ago │ 3 of 4 │ 1.75GB     │ 431MB       │
+│   api-v2             │      │ 4648de2cd0dfcb30ea46 │        │        │            │             │
+│                      │      │ dbb4                 │        │        │            │             │
+│ ● doublewave/orders/ │ 4    │ testing-3c363836cf4e │ 4h ago │ 1 of 4 │ 1.12GB     │ 843MB       │
+│   storefront/api     │      │ 16666669a25da280a186 │        │        │            │             │
+│                      │      │ 5c2d2874             │        │        │            │             │
+│ ● doublewave/devops/ │ 1    │ v3.7.13              │ 4w ago │ 1 of 1 │ 252MB      │             │
+│   registry/traefik/  │      │                      │        │        │            │             │
+│   traefik            │      │                      │        │        │            │             │
+│ ● doublewave/orders/ │ 2    │ testing-58e6b3a414a1 │ 1d ago │ 1 of 2 │ 160MB      │ 80.1MB      │
+│   storefront/ui      │      │ e090dfc6029add0f3555 │        │        │            │             │
+│                      │      │ ccba127f             │        │        │            │             │
+└──────────────────────┴──────┴──────────────────────┴────────┴────────┴────────────┴─────────────┘
 ● used by a container   ○ not used
 11 images in 5 repositories, 3.28GB in total, 1.35GB not used
 ```
@@ -492,20 +508,20 @@ Instead of one row per tag, you get one row per repository, biggest first:
   be smaller than UNUSED SIZE.
 
 `--group` can go before or after `images`. `--sort` and `--cols` work on
-the grouped table too, for example `dvt --sort unused --desc images --group`.
+the grouped table too, for example `dkview --sort unused --desc images --group`.
 
-### 4.8 Clean up old images: `dvt clean`
+### 4.8 Clean up old images: `dkview clean`
 
 ```sh
-dvt clean --dry-run          # only show what would be deleted
-dvt clean                    # show the plan, then ask before deleting
-dvt clean --keep 2           # keep only the newest 2 tags per repository
-dvt clean --keep 5           # keep the newest 5 tags per repository
-dvt clean --grep api-v2      # only look at matching repositories
-dvt clean --yes              # delete without asking (for cron jobs)
+dkview clean --dry-run          # only show what would be deleted
+dkview clean                    # show the plan, then ask before deleting
+dkview clean --keep 2           # keep only the newest 2 tags per repository
+dkview clean --keep 5           # keep the newest 5 tags per repository
+dkview clean --grep api-v2      # only look at matching repositories
+dkview clean --yes              # delete without asking (for cron jobs)
 ```
 
-How dvt decides what to delete, per repository:
+How dkview decides what to delete, per repository:
 
 1. The newest **N** tags are always kept (`--keep N`, default **3**).
 2. Any image used by a container, **running or stopped**, is always kept.
@@ -518,12 +534,12 @@ It prints the plan first:
 ┌───────────────────────────┬────────────────────────────┬──────────────┬─────────┬───────┬────────┐
 │ REPOSITORY                │ TAG                        │ IMAGE ID     │ CREATED │ SIZE  │ ACTION │
 ├───────────────────────────┼────────────────────────────┼──────────────┼─────────┼───────┼────────┤
-│ ○ doublewave/transfers/   │ testing-42095844d514a1f1da │ 4bbfa42b6f2c │ 1w ago  │ 281MB │ delete │
-│   backoffice/api          │ 0572dc0424de4f3b0484f0     │              │         │       │        │
-│ ○ doublewave/transfers/   │ testing-9792faf89378ea4aae │ 44939f22ce0c │ 2w ago  │ 281MB │ delete │
-│   backoffice/api          │ f1f336dd4bafcda106378c     │              │         │       │        │
-│ ○ doublewave/transfers/   │ dev-f2241ba4d16b49ec25c17d │ 78cc88c49346 │ 2d ago  │ 431MB │ delete │
-│   api-v2                  │ 42c92ff7fa1fa561f6         │              │         │       │        │
+│ ○ doublewave/orders/      │ testing-4a0a19218e082a343a │ c09bb890b096 │ 1w ago  │ 281MB │ delete │
+│   storefront/api          │ 1b17e5333409af9d98f0f5     │              │         │       │        │
+│ ○ doublewave/orders/      │ testing-54fd1711209fb1c078 │ a46e558d11cb │ 2w ago  │ 281MB │ delete │
+│   storefront/api          │ 1092374132c66e79e2241b     │              │         │       │        │
+│ ○ doublewave/orders/api-  │ dev-042dc4512fa3d391c5170c │ 3795b54c5ba6 │ 2d ago  │ 431MB │ delete │
+│   v2                      │ f3aa61e6a638f84342         │              │         │       │        │
 └───────────────────────────┴────────────────────────────┴──────────────┴─────────┴───────┴────────┘
 3 images to delete in 2 repositories, up to 993MB freed  (keeping the newest 2 per repository and every image a container uses)
 Delete these 3 images? [y/N]
@@ -532,7 +548,7 @@ Delete these 3 images? [y/N]
 * Nothing is deleted until you answer `y`. Any other answer, or Enter,
   cancels.
 * `--dry-run` also lists the tags being kept and why, then stops.
-* Without a terminal (in a script or cron job), dvt refuses to delete
+* Without a terminal (in a script or cron job), dkview refuses to delete
   unless you pass `--yes`.
 * Images are removed one at a time with `docker rmi repo:tag`, so one
   failure doesn't stop the rest. Each result is printed.
@@ -542,12 +558,12 @@ Delete these 3 images? [y/N]
   docker's own `docker container prune`, `docker volume prune` and
   `docker network prune`.
 
-### 4.9 Swarm doctor: `dvt doctor`
+### 4.9 Swarm doctor: `dkview doctor`
 
 ```sh
-dvt doctor                   # check every swarm service
-dvt doctor --full            # list every failed task instead of grouping
-dvt doctor --grep api        # only matching services
+dkview doctor                   # check every swarm service
+dkview doctor --full            # list every failed task instead of grouping
+dkview doctor --grep api        # only matching services
 ```
 
 For each service that isn't healthy, you get the replicas, the current
@@ -572,7 +588,7 @@ Swarm services: 12 healthy · 1 restarting · 1 failing
   4 failed tasks in recent history · now: Running 10s ago
   ...
   → The program inside the container exited with an error. See why with
-    `dvt errors crashy`.
+    `dkview errors crashy`.
 
 ✓ Healthy
 ┌──────────┬──────────┬──────────────────────────────┐
@@ -590,64 +606,64 @@ exits, exit 137 (out of memory or killed), no suitable node, ports already
 in use, missing mounts and failing health checks.
 
 Docker keeps only the last few tasks of each service (5 per replica by
-default), so "failed tasks in recent history" counts those. `dvt doctor`
+default), so "failed tasks in recent history" counts those. `dkview doctor`
 exits with code 1 when any service is failing, so it can be used in
 scripts and monitoring checks.
 
-### 4.10 Errors in logs: `dvt errors`
+### 4.10 Errors in logs: `dkview errors`
 
 Reads the logs and tells you what is breaking: errors and warnings are
 counted, and repeats of the same message are grouped, with how often it
 happened and when it was first and last seen.
 
 ```sh
-dvt errors                         # every service and container, last 30 minutes
-dvt errors transfers               # one stack (all of its services)
-dvt errors transfers_api           # one service
-dvt errors payments                # one container, by name
-dvt errors 9a8b7c --since 2d       # one container, by ID, last 2 days
-dvt errors transfers payments      # several at once
-dvt errors api --grep timeout      # count only lines matching a pattern
-dvt errors --full                  # every kind of message, not just the top 10
+dkview errors                         # every service and container, last 30 minutes
+dkview errors orders               # one stack (all of its services)
+dkview errors orders_api           # one service
+dkview errors checkout                # one container, by name
+dkview errors 9a8b7c --since 2d       # one container, by ID, last 2 days
+dkview errors orders checkout      # several at once
+dkview errors api --grep timeout      # count only lines matching a pattern
+dkview errors --full                  # every kind of message, not just the top 10
 ```
 
 Example:
 
 ```
-$ dvt errors
+$ dkview errors
 Errors and warnings, last 30m: 7 errors · 1 warning in 2 of 5 sources
-┌───────────────┬───────────┬────────┬──────────┬────────────┬───────┐
-│ SOURCE        │ KIND      │ ERRORS │ WARNINGS │ LAST ERROR │ LINES │
-├───────────────┼───────────┼────────┼──────────┼────────────┼───────┤
-│ transfers_api │ service   │ 4      │ 1        │ 4m ago     │ 7     │
-│ payments      │ container │ 3      │ 0        │ 4m ago     │ 5     │
-└───────────────┴───────────┴────────┴──────────┴────────────┴───────┘
-✓ nothing in quiet-box, traefik, transfers_worker
+┌────────────┬───────────┬────────┬──────────┬────────────┬───────┐
+│ SOURCE     │ KIND      │ ERRORS │ WARNINGS │ LAST ERROR │ LINES │
+├────────────┼───────────┼────────┼──────────┼────────────┼───────┤
+│ orders_api │ service   │ 4      │ 1        │ 4m ago     │ 7     │
+│ checkout   │ container │ 3      │ 0        │ 4m ago     │ 5     │
+└────────────┴───────────┴────────┴──────────┴────────────┴───────┘
+✓ nothing in orders_worker, quiet-box, traefik
 
-✗ transfers_api  service · 4 errors · 1 warning · 3 different messages
-  ┌───────┬───────┬────────┬────────┬──────────────────────────────────────────────────────────┐
-  │ COUNT │ LEVEL │ LAST   │ FIRST  │ MESSAGE                                                  │
-  ├───────┼───────┼────────┼────────┼──────────────────────────────────────────────────────────┤
-  │ 3×    │ error │ 4m ago │ 4m ago │ ERROR Timeout calling http://10.0.3.2:8080/accounts      │
-  │       │       │        │        │ after 30000ms (order 9)                                  │
-  │ 1×    │ error │ 4m ago │ 4m ago │ ERROR Npgsql.NpgsqlException: connection refused         │
-  │ 1×    │ warn  │ 4m ago │ 4m ago │ WARN Retrying payment 5, attempt 2                       │
-  └───────┴───────┴────────┴────────┴──────────────────────────────────────────────────────────┘
+✗ orders_api  service · 4 errors · 1 warning · 3 different messages
+  ┌───────┬───────┬─────────┬─────────┬───────────────────────────────────────────────────────┐
+  │ COUNT │ LEVEL │ LAST    │ FIRST   │ MESSAGE                                               │
+  ├───────┼───────┼─────────┼─────────┼───────────────────────────────────────────────────────┤
+  │ 3×    │ error │ 4m ago  │ 4m ago  │ ERROR Timeout calling http://10.0.3.2:8080/accounts   │
+  │       │       │         │         │ after 30000ms (order 9)                               │
+  │ 1×    │ error │ 4m ago  │ 4m ago  │ ERROR Npgsql.NpgsqlException: connection refused      │
+  │ 1×    │ warn  │ 4m ago  │ 4m ago  │ WARN Retrying shipment 5, attempt 2                   │
+  └───────┴───────┴─────────┴─────────┴───────────────────────────────────────────────────────┘
 
-✗ payments  container · 3 errors · 2 different messages
-  ┌───────┬───────┬────────┬────────┬──────────────────────────────────────────────────────────┐
-  │ COUNT │ LEVEL │ LAST   │ FIRST  │ MESSAGE                                                  │
-  ├───────┼───────┼────────┼────────┼──────────────────────────────────────────────────────────┤
-  │ 2×    │ error │ 4m ago │ 4m ago │ fail: Payments.Api.Controllers[0] Unhandled exception    │
-  │       │       │        │        │ for request 4f3a194-9c:                                  │
-  │       │       │        │        │ System.InvalidOperationException: Sequence contains no   │
-  │       │       │        │        │ elements                                                 │
-  │ 1×    │ error │ 4m ago │ 4m ago │ System.TimeoutException: The operation has timed out     │
-  └───────┴───────┴────────┴────────┴──────────────────────────────────────────────────────────┘
+✗ checkout  container · 3 errors · 2 different messages
+  ┌───────┬───────┬─────────┬─────────┬───────────────────────────────────────────────────────┐
+  │ COUNT │ LEVEL │ LAST    │ FIRST   │ MESSAGE                                               │
+  ├───────┼───────┼─────────┼─────────┼───────────────────────────────────────────────────────┤
+  │ 2×    │ error │ 4m ago  │ 4m ago  │ fail: Checkout.Api.Controllers[0] Unhandled exception │
+  │       │       │         │         │ for request 4f3a194-9c:                               │
+  │       │       │         │         │ System.InvalidOperationException: Sequence contains   │
+  │       │       │         │         │ no elements                                           │
+  │ 1×    │ error │ 4m ago  │ 4m ago  │ System.TimeoutException: The operation has timed out  │
+  └───────┴───────┴─────────┴─────────┴───────────────────────────────────────────────────────┘
 ```
 
 **What to pass.** Each name can be a stack, a service or a container, by
-name or ID (an ID can be shortened, like docker allows). dvt works out
+name or ID (an ID can be shortened, like docker allows). dkview works out
 which it is. If a stack and a service have the same name, the stack wins.
 With no name, it reads every swarm service plus every container that
 isn't part of a service. A service's own task containers are skipped,
@@ -669,12 +685,12 @@ ignored when comparing messages, so `Timeout calling 10.0.3.3 (order 3)` and
 `Timeout calling 10.0.3.6 (order 6)` are the same problem. The table shows
 the most recent example.
 
-**In scripts and cron.** `dvt errors` exits with code 1 when it finds
+**In scripts and cron.** `dkview errors` exits with code 1 when it finds
 any error, 0 when there are none (warnings alone give 0), and 2 when a
 name doesn't exist or `--since` is invalid. For example:
 
 ```sh
-dvt --no-color errors transfers --since 1h > /tmp/errors.txt || mail -s "transfers errors" ops@doublewave.uz < /tmp/errors.txt
+dkview --no-color errors orders --since 1h > /tmp/errors.txt || mail -s "orders errors" ops@doublewave.example < /tmp/errors.txt
 ```
 
 Reading a long window over many containers can take a while, because
@@ -684,42 +700,42 @@ shorter `--since`.
 ### 4.11 Everything else
 
 Any command that isn't a table, logs or inspect runs exactly as if you'd
-typed it without `dvt`. That includes `run`, `exec -it`, `build`,
+typed it without `dkview`. That includes `run`, `exec -it`, `build`,
 `pull`, `events`, `login`, `--help` and typos. Their output, errors,
 exit codes and Ctrl+C all behave normally.
 
 ```sh
-dvt exec -it web sh      # works normally
-dvt --raw ps             # force plain docker output for a table command
+dkview exec -it web sh      # works normally
+dkview --raw ps             # force plain docker output for a table command
 ```
 
 ### 4.12 Non-docker commands
 
-dvt also tries to format other column-aligned output, such as
-`dvt kubectl get pods`. If the output isn't a table, it's printed
-unchanged. dvt waits for these commands to finish, so only use it with
+dkview also tries to format other column-aligned output, such as
+`dkview kubectl get pods`. If the output isn't a table, it's printed
+unchanged. dkview waits for these commands to finish, so only use it with
 commands that end on their own.
 
 ---
 
 ## 5. Options
 
-dvt's own options go **before** the command:
-`dvt --sort cpu stats`, not `dvt stats --sort cpu`.
+dkview's own options go **before** the command:
+`dkview --sort cpu stats`, not `dkview stats --sort cpu`.
 (Options after the command are passed to docker.)
 
 ### Table view
 
 | Option | What it does | Example |
 | --- | --- | --- |
-| `--cols A,B,...` | Show only these columns, in this order. Names can be shortened or abbreviated (`cpu`, `mem`, `img`, `id`, `stat`). | `dvt --cols name,status,ports ps` |
-| `--sort COL` | Sort rows by a column. Numbers, sizes (`512MiB`), percentages and ages sort by value. | `dvt --sort created images` |
-| `--desc` | Sort largest first. | `dvt --sort cpu --desc stats` |
-| `--grep REGEX` | Keep only rows (or log lines) matching, case-insensitive. | `dvt --grep api ps` |
-| `--short` | Hide the registry host in image names (`registry.example.uz/team/api:v1` → `team/api:v1`), and drop the task ID from swarm container names (`api.1.rhl9m97o2vw5…` → `api.1`). | `dvt --short ps` |
-| `--long-times` | Keep `4 minutes ago` instead of `4m ago`. | `dvt --long-times ps` |
-| `--trunc` | Let docker truncate values as it normally does. | `dvt --trunc ps` |
-| `--width N` | Table width in characters (default: the terminal width). | `dvt --width 120 ps` |
+| `--cols A,B,...` | Show only these columns, in this order. Names can be shortened or abbreviated (`cpu`, `mem`, `img`, `id`, `stat`). | `dkview --cols name,status,ports ps` |
+| `--sort COL` | Sort rows by a column. Numbers, sizes (`512MiB`), percentages and ages sort by value. | `dkview --sort created images` |
+| `--desc` | Sort largest first. | `dkview --sort cpu --desc stats` |
+| `--grep REGEX` | Keep only rows (or log lines) matching, case-insensitive. | `dkview --grep api ps` |
+| `--short` | Hide the registry host in image names (`registry.example.com/team/api:v1` → `team/api:v1`), and drop the task ID from swarm container names (`api.1.rhl9m97o2vw5…` → `api.1`). | `dkview --short ps` |
+| `--long-times` | Keep `4 minutes ago` instead of `4m ago`. | `dkview --long-times ps` |
+| `--trunc` | Let docker truncate values as it normally does. | `dkview --trunc ps` |
+| `--width N` | Table width in characters (default: the terminal width). | `dkview --width 120 ps` |
 
 ### Modes
 
@@ -732,7 +748,7 @@ dvt's own options go **before** the command:
 | `--raw` | Run the command untouched. |
 | `--group` | `images`: one row per repository with total and unused size. |
 
-### dvt clean
+### dkview clean
 
 | Option | What it does |
 | --- | --- |
@@ -743,7 +759,7 @@ dvt's own options go **before** the command:
 `--grep` limits `clean` and `doctor` to matching repositories or services.
 `--full` makes `doctor` list every failed task.
 
-### dvt errors
+### dkview errors
 
 | Option | What it does |
 | --- | --- |
@@ -751,8 +767,8 @@ dvt's own options go **before** the command:
 | `--grep REGEX` | Count only log lines matching this. |
 | `--full` | Show every kind of message for each source, not just the top 10. |
 
-Unlike other commands, `dvt errors` accepts its options anywhere:
-`dvt errors api --since 2d` and `dvt --since 2d errors api` are the same.
+Unlike other commands, `dkview errors` accepts its options anywhere:
+`dkview errors api --since 2d` and `dkview --since 2d errors api` are the same.
 
 ### Output
 
@@ -763,11 +779,11 @@ Unlike other commands, `dvt errors` accepts its options anywhere:
 | `-V`, `--version` | Show the version. |
 | `-h`, `--help` | Show all options with examples. |
 
-If an unknown column name is given, dvt lists the available ones:
+If an unknown column name is given, dkview lists the available ones:
 
 ```
-$ dvt --cols bogus ps
-dvt: no column matches 'bogus'. Columns: container id, image, command, created, status, ports, names
+$ dkview --cols bogus ps
+dkview: no column matches 'bogus'. Columns: container id, image, command, created, status, ports, names
 ```
 
 ---
@@ -793,46 +809,46 @@ or a file), or when the `NO_COLOR` environment variable is set. Use
 
 ---
 
-## 7. Make plain `docker` use dvt
+## 7. Make plain `docker` use dkview
 
 If you'd like `docker ps` itself to be formatted, without typing
-`dvt`:
+`dkview`:
 
 ```sh
 # bash
-echo 'eval "$(dvt shell-init bash)"' >> ~/.bashrc
+echo 'eval "$(dkview shell-init bash)"' >> ~/.bashrc
 # zsh
-echo 'eval "$(dvt shell-init zsh)"' >> ~/.zshrc
+echo 'eval "$(dkview shell-init zsh)"' >> ~/.zshrc
 # fish
-echo 'dvt shell-init fish | source' >> ~/.config/fish/config.fish
+echo 'dkview shell-init fish | source' >> ~/.config/fish/config.fish
 ```
 
 ```powershell
 # PowerShell (Windows)
-Add-Content $PROFILE 'Invoke-Expression (dvt shell-init powershell | Out-String)'
+Add-Content $PROFILE 'Invoke-Expression (dkview shell-init powershell | Out-String)'
 ```
 
 Then open a new terminal. This defines a small `docker` shell function:
 
-* In your terminal, `docker ps` goes through dvt.
+* In your terminal, `docker ps` goes through dkview.
 * In pipes and scripts (`docker ps | grep x`, `$(docker ps -q)`), docker's
   raw output is untouched, so nothing that parses docker output breaks.
-* To skip dvt once, run `command docker ps`.
+* To skip dkview once, run `command docker ps`.
 
-To see exactly what gets added, run `dvt shell-init bash`.
+To see exactly what gets added, run `dkview shell-init bash`.
 
 ---
 
 ## 8. Default options
 
-Put options you always want in the `DVT_OPTS` environment variable.
+Put options you always want in the `DKVIEW_OPTS` environment variable.
 They're applied before the ones you type:
 
 ```sh
-echo 'export DVT_OPTS="--short"' >> ~/.bashrc
+echo 'export DKVIEW_OPTS="--short"' >> ~/.bashrc
 ```
 
-`DVT_ENGINE` chooses the program dvt runs: `docker` (the default when it's
+`DKVIEW_ENGINE` chooses the program dkview runs: `docker` (the default when it's
 installed), `podman`, or a full path to either.
 
 ---
@@ -841,43 +857,44 @@ installed), `podman`, or a full path to either.
 
 | Installed with | Update by |
 | --- | --- |
-| A. source archive | Copy the new archive over, then `rm -rf ~/dvt && tar -xzf dvt-source.tar.gz -C ~`. The `~/bin/dvt` launcher stays as it is. |
-| B. git | `cd ~/dvt && git pull` |
-| C. pip | `cd ~/dvt && git pull && python3 -m pip install --user --upgrade .` |
-| D. single file | Build a new `dist/dvt` and copy it over the old one. |
+| A. source archive | Copy the new archive over, then `rm -rf ~/dkview && tar -xzf dkview-source.tar.gz -C ~`. The `~/bin/dkview` launcher stays as it is. |
+| B. git | `cd ~/dkview && git pull` |
+| C. pip | `cd ~/dkview && git pull && python3 -m pip install --user --upgrade .` |
+| D. single file | Build a new `dist/dkview` and copy it over the old one. |
 
-Check with `dvt --version`.
+Check with `dkview --version`.
 
-### Switching from pprint
+### Switching from pprint or dvt
 
-Up to version 2.4.1 this tool was called `pprint`. From 3.0 it is `dvt`
-everywhere, and the old name no longer works:
+Up to version 2.4.1 this tool was called `pprint`, and the 3.0 betas up to
+3.0.0b4 called it `dvt`. From 3.0.0b5 it is `dkview` everywhere, and the old
+names no longer work:
 
-| Before | Now |
-| --- | --- |
-| `pprint ps`, `dpp ps` | `dvt ps` |
-| `~/pprint` and the `~/bin/pprint` launcher | `~/dvt` and `~/bin/dvt` |
-| `python3 -m pprint_docker` | `python3 -m dvt` |
-| `PPRINT_OPTS="--short"` | `DVT_OPTS="--short"` |
-| `eval "$(pprint shell-init bash)"` | `eval "$(dvt shell-init bash)"` |
-| `pprint-source.tar.gz` | `dvt-source.tar.gz` |
-| pip package `pprint-docker` | pip package `dvt-docker` |
+| Before (pprint) | Before (dvt beta) | Now |
+| --- | --- | --- |
+| `pprint ps`, `dpp ps` | `dvt ps` | `dkview ps` |
+| `~/pprint`, `~/bin/pprint` | `~/dvt`, `~/bin/dvt` | `~/dkview`, `~/bin/dkview` |
+| `python3 -m pprint_docker` | `python3 -m dvt` | `python3 -m dkview` |
+| `PPRINT_OPTS` | `DVT_OPTS`, `DVT_ENGINE` | `DKVIEW_OPTS`, `DKVIEW_ENGINE` |
+| `pprint shell-init bash` | `dvt shell-init bash` | `dkview shell-init bash` |
+| `pprint-source.tar.gz` | `dvt-source.tar.gz` | `dkview-source.tar.gz` |
 
 On a server installed with method A:
 
 ```sh
-# 1. Remove the old version
-rm -f ~/bin/pprint
-rm -rf ~/pprint
+# 1. Remove the old version (whichever you have)
+rm -f ~/bin/pprint ~/bin/dvt
+rm -rf ~/pprint ~/dvt
 
-# 2. Install dvt: method A, steps 1 and 2 (unpack dvt-source.tar.gz, create ~/bin/dvt)
+# 2. Install dkview: method A, steps 1 and 2 (unpack dkview-source.tar.gz, create ~/bin/dkview)
 
 # 3. Rename the settings in your shell startup file, if you have them
-sed -i 's/pprint shell-init/dvt shell-init/; s/PPRINT_OPTS/DVT_OPTS/' ~/.bashrc
+sed -i -e 's/pprint shell-init/dkview shell-init/; s/PPRINT_OPTS/DKVIEW_OPTS/' \
+       -e 's/dvt shell-init/dkview shell-init/; s/DVT_OPTS/DKVIEW_OPTS/; s/DVT_ENGINE/DKVIEW_ENGINE/' ~/.bashrc
 
 # 4. Open a new terminal, then check
-dvt --version
-type pprint        # should say "not found"
+dkview --version
+type pprint dvt    # both should say "not found"
 ```
 
 All commands and options are the same as before; only the name changed.
@@ -887,66 +904,66 @@ All commands and options are the same as before; only the name changed.
 ## 10. Uninstall
 
 1. **Remove the shell integration** if you added it (section 7). Delete the
-   `dvt shell-init` line from `~/.bashrc`, `~/.zshrc` or
-   `~/.config/fish/config.fish`, plus any `DVT_OPTS` line.
+   `dkview shell-init` line from `~/.bashrc`, `~/.zshrc` or
+   `~/.config/fish/config.fish`, plus any `DKVIEW_OPTS` line.
 
 2. **Remove the program**, matching how you installed it:
 
    ```sh
    # A / B: source archive or git
-   rm -f ~/bin/dvt
-   rm -rf ~/dvt
+   rm -f ~/bin/dkview
+   rm -rf ~/dkview
 
    # A, installed for every user
-   sudo rm -f /usr/local/bin/dvt
-   sudo rm -rf /opt/dvt
+   sudo rm -f /usr/local/bin/dkview
+   sudo rm -rf /opt/dkview
 
    # C: pip
-   python3 -m pip uninstall dvt-docker
+   python3 -m pip uninstall dkview
 
    # D: single file
-   rm -f ~/bin/dvt        # or wherever you copied it
+   rm -f ~/bin/dkview        # or wherever you copied it
    ```
 
 3. Open a new terminal (or run `hash -r`) and check:
 
    ```sh
-   type dvt               # should say "not found"
+   type dkview               # should say "not found"
    ```
 
-dvt doesn't change docker or any container, image or setting, and it
+dkview doesn't change docker or any container, image or setting, and it
 doesn't write any files of its own, so there's nothing else to clean up.
 
 ---
 
 ## 11. Troubleshooting
 
-**`dvt: command not found`**
+**`dkview: command not found`**
 `~/bin` isn't on your PATH. Run `export PATH="$HOME/bin:$PATH"` and add
 that line to `~/.bashrc`. Then run `hash -r`.
 
-**`dvt --version` shows an old version, or the old behaviour**
-An old alias or file is still in use. Run `type dvt`, then delete the
+**`dkview --version` shows an old version, or the old behaviour**
+An old alias or file is still in use. Run `type dkview`, then delete the
 alias from `~/.bashrc` or the old file it points to, and open a new
 terminal.
 
-**`No module named dvt`**
-The launcher can't find the source. Check that `~/dvt/src/dvt`
-exists. If you unpacked it somewhere else, fix the path in `~/bin/dvt`.
+**`No module named dkview`**
+The launcher can't find the source. Check that `~/dkview/src/dkview`
+exists. If you unpacked it somewhere else, fix the path in `~/bin/dkview`.
 
 **`SyntaxError` when starting**
 Python is older than 3.7. Check with `python3 --version`.
 
 **`Cannot connect to the Docker daemon`**
 That message comes from docker itself. Check that `docker ps` works
-without dvt (permissions, `sudo`, or the `docker` group).
+without dkview (permissions, `sudo`, or the `docker` group).
 
 **No colors**
 The output isn't going to a terminal, or `NO_COLOR` is set. Use `--color`
 to force them.
 
 **The table is too wide or wraps too much**
-dvt uses the terminal width. Make the window wider, use `--cols` to
+dkview uses the terminal width. Make the window wider, use `--cols` to
 show fewer columns, use `--short` for image names, or set `--width`.
 
 **The live view shows "… N more lines"**
@@ -955,57 +972,58 @@ The window isn't tall enough. Make it taller, or narrow the list with
 
 **A command hangs**
 Docker commands that stream (`logs -f`, `events`, `stats`) are handled by
-dvt and stop with Ctrl+C. A non-docker command that never finishes
-will hang, because dvt waits for its output. Use `--raw` for those.
+dkview and stop with Ctrl+C. A non-docker command that never finishes
+will hang, because dkview waits for its output. Use `--raw` for those.
 
-**`dvt errors` shows "! name: Error response from daemon: ... does not support reading"**
+**`dkview errors` shows "! name: Error response from daemon: ... does not support reading"**
 That container or service uses a logging driver docker can't read back
 (for example `syslog` or `gelf` without dual logging). Its logs live in
-that system instead, so dvt can't count them.
+that system instead, so dkview can't count them.
 
-**`dvt errors` says "no stack, service or container called ..."**
-Check the name with `dvt service ls`, `dvt stack ls` or
-`dvt ps -a`. Stacks and services are only visible on a swarm manager.
+**`dkview errors` says "no stack, service or container called ..."**
+Check the name with `dkview service ls`, `dkview stack ls` or
+`dkview ps -a`. Stacks and services are only visible on a swarm manager.
 
 **`--sort` or `--cols` passed to docker by mistake**
-dvt's options must come before the command: `dvt --sort cpu stats`.
+dkview's options must come before the command: `dkview --sort cpu stats`.
 
 ---
 
 ## 12. FAQ
 
-**Does dvt change anything in docker?**
-Only `dvt clean` deletes anything, and only image tags, after you
+**Does dkview change anything in docker?**
+Only `dkview clean` deletes anything, and only image tags, after you
 confirm. Everything else just runs the docker command you give it,
 sometimes adding read-only display flags (`--no-trunc`, `--no-stream`),
 and reformats the output.
 
-**Can `dvt clean` delete an image a service needs?**
+**Can `dkview clean` delete an image a service needs?**
 Not one that any container uses, running or stopped. But a service that
 is scaled to 0, or a tag you plan to deploy later, has no container. If
 you need such a tag, raise `--keep`, or check with `--dry-run` first.
 
 **Is it safe in scripts?**
-Scripts should call `docker` directly, or use `dvt --raw`. With the
+Scripts should call `docker` directly, or use `dkview --raw`. With the
 shell integration from section 7, `docker` in pipes and scripts already
 gets docker's raw output.
 
 **Does it work with old docker versions?**
-Yes. dvt asks docker for JSON where it can, which is exact even when
+Yes. dkview asks docker for JSON where it can, which is exact even when
 values contain spaces or cells are empty. If docker doesn't understand the
-request, dvt quietly reads the normal text output instead.
+request, dkview quietly reads the normal text output instead.
 
 **Can I still use `--format`?**
-Yes. `dvt ps --format '{{.Names}}'` is passed straight through.
+Yes. `dkview ps --format '{{.Names}}'` is passed straight through.
 `--format 'table ...'` output is still formatted as a table.
 
-**`dvt ps` runs docker, but I wanted Linux `ps`.**
-dvt treats `ps` and `top` as docker commands. Use the full path for the
-Linux tools: `dvt /bin/ps aux`.
+**`dkview ps` runs docker, but I wanted Linux `ps`.**
+dkview treats `ps` and `top` as docker commands. Use the full path for the
+Linux tools: `dkview /bin/ps aux`.
 
-**Why the name dvt?**
-It's short to type and doesn't collide with the `pprint` module that comes
-with Python, which the old name did.
+**Why the name dkview?**
+"Docker view". It's short to type, and nothing else uses it: `pprint` clashed
+with the module that comes with Python, and `dvt` with three other PyPI
+packages that install a `dvt` command.
 
 **Does it need internet?**
 No. It only needs Python 3.7+ and the docker (or podman) CLI.
@@ -1017,12 +1035,12 @@ No. It only needs Python 3.7+ and the docker (or podman) CLI.
 ### Project layout
 
 ```
-dvt/
+dkview/
 ├── README.md
-├── pyproject.toml          package metadata, the `dvt` command
+├── pyproject.toml          package metadata, the `dkview` command
 ├── Makefile                test / build / zipapp shortcuts
-├── src/dvt/
-│   ├── __main__.py         `python3 -m dvt` starts here
+├── src/dkview/
+│   ├── __main__.py         `python3 -m dkview` starts here
 │   ├── cli.py              options and dispatch to the right feature
 │   ├── docker.py           which docker command is it; flags to add
 │   ├── engine.py           docker or podman: which program to run
@@ -1040,12 +1058,12 @@ dvt/
 │       ├── live.py         full-screen redraw (stats, --watch, dash --watch)
 │       ├── logs.py         colored logs and --grep
 │       ├── inspect.py      inspect summaries and JSON tree
-│       ├── dashboard.py    dvt dash
+│       ├── dashboard.py    dkview dash
 │       ├── images.py       in-use marks, image data, images --group
-│       ├── clean.py        dvt clean
-│       ├── doctor.py       dvt doctor
-│       ├── errors.py       dvt errors
-│       └── shell.py        dvt shell-init
+│       ├── clean.py        dkview clean
+│       ├── doctor.py       dkview doctor
+│       ├── errors.py       dkview errors
+│       └── shell.py        dkview shell-init
 ├── .github/workflows/
 │   └── tests.yml           CI: unit tests per Python, real tests per Docker
 └── tests/
@@ -1057,7 +1075,7 @@ dvt/
 
 ### How a command flows
 
-1. `cli.py` reads dvt's options and adds `docker` in front if you left
+1. `cli.py` reads dkview's options and adds `docker` in front if you left
    it out.
 2. `docker.py` classifies the command as table, stats, logs, inspect or
    passthrough.
@@ -1074,8 +1092,8 @@ dvt/
 ### Run from source without installing
 
 ```sh
-cd ~/dvt
-PYTHONPATH=src python3 -m dvt ps
+cd ~/dkview
+PYTHONPATH=src python3 -m dkview ps
 ```
 
 ### Tests
@@ -1102,7 +1120,7 @@ It creates a swarm if the machine isn't in one, plus a stack, services
 and containers named `rt_*`, and removes them afterwards. Run it on a test
 machine, not on a production node.
 
-For Podman, run it with `DVT_ENGINE=podman make test-real`; the swarm
+For Podman, run it with `DKVIEW_ENGINE=podman make test-real`; the swarm
 parts are skipped.
 
 Tested with Docker 20.10, 24, 27 and 29, Podman 4.9, and Python 3.7 to
@@ -1113,14 +1131,27 @@ the unit tests on each Python version and on macOS and Windows, and
 ### Build
 
 ```sh
-make zipapp        # dist/dvt, one executable file
+make zipapp        # dist/dkview, one executable file
 make build         # wheel + sdist in dist/ (needs: pip install build)
+make check         # build, then validate both with twine (needs: pip install twine)
 make clean         # remove build output
 ```
 
+### Release to PyPI
+
+1. Set `__version__` in `src/dkview/__init__.py` and commit.
+2. `make clean check`. It builds the wheel and sdist and runs
+   `twine check` on them.
+3. Try the upload on TestPyPI first:
+   `python3 -m twine upload --repository testpypi dist/dkview-[0-9]*`,
+   then `pipx install --index-url https://test.pypi.org/simple/ dkview`.
+4. Upload for real: `python3 -m twine upload dist/dkview-[0-9]*`.
+   twine asks for an API token from https://pypi.org/manage/account/token/
+   (user name `__token__`). A version number can be uploaded only once.
+
 ### Adding a new table command
 
-Add it to `TABLE_COMMANDS` in `src/dvt/docker.py`. If docker
+Add it to `TABLE_COMMANDS` in `src/dkview/docker.py`. If docker
 supports `--no-trunc` for it, add it to `NO_TRUNC` as well. To read it as
 JSON, add its columns (header and `--format` field) to `LAYOUTS` in
 `formats.py` and a JSON fixture to `tests/fixtures`. To color a new

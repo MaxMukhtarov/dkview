@@ -1,0 +1,3 @@
+include LICENSE README.md Makefile
+graft tests
+global-exclude __pycache__ *.py[co]

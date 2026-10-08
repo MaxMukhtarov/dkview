@@ -2,7 +2,7 @@
 """Stand-in for the docker CLI, serving recorded output from tests/fixtures.
 
 Every call's arguments are appended to $FAKE_DOCKER_LOG so tests can check
-what dvt actually ran.
+what dkview actually ran.
 """
 
 import json
@@ -22,11 +22,11 @@ def fixture(name: str) -> str:
 
 
 def errors_scenario(args, words) -> int:
-    """A swarm with a stack "transfers", a lone container and docker's own errors."""
+    """A swarm with a stack "orders", a lone container and docker's own errors."""
     if words[:2] == ["service", "ls"]:
         sys.stdout.write(fixture("errors_services.jsonl"))
     elif words[:2] == ["stack", "ls"]:
-        sys.stdout.write("transfers\n")
+        sys.stdout.write("orders\n")
     elif words[:1] == ["ps"]:
         sys.stdout.write(fixture("errors_containers.jsonl"))
     elif words[:2] == ["service", "logs"] or words[:1] == ["logs"]:
@@ -59,7 +59,7 @@ def json_template(args, words) -> Optional[int]:
     if name is None:
         return None
     fields = re.findall(r"\{\{json \.(\w+)\}\}", template)
-    # FAKE_OLD_DOCKER: a docker that lacks the fields, so dvt falls back.
+    # FAKE_OLD_DOCKER: a docker that lacks the fields, so dkview falls back.
     old = os.environ.get("FAKE_OLD_DOCKER")
     for line in fixture(name).splitlines():
         item = json.loads(line)

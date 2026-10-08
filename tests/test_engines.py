@@ -5,8 +5,8 @@ import sys
 
 import pytest
 
-from dvt import ansi, docker, engine
-from dvt.features import dashboard, errors, shell
+from dkview import ansi, docker, engine
+from dkview.features import dashboard, errors, shell
 
 
 @pytest.mark.parametrize("program, kind", [
@@ -26,10 +26,10 @@ def test_podman_commands_are_understood():
 
 
 def test_engine_choice(monkeypatch):
-    monkeypatch.setenv("DVT_ENGINE", "podman")
+    monkeypatch.setenv("DKVIEW_ENGINE", "podman")
     assert engine.name() == "podman"
     assert docker.expand_shortcut(["ps", "-a"]) == ["podman", "ps", "-a"]
-    monkeypatch.delenv("DVT_ENGINE")
+    monkeypatch.delenv("DKVIEW_ENGINE")
     monkeypatch.setattr(engine.shutil, "which", lambda name: name == "podman" and "/usr/bin/podman")
     assert engine.name() == "podman"          # docker missing, podman found
     monkeypatch.setattr(engine.shutil, "which", lambda name: "/usr/bin/" + name)

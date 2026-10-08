@@ -1,4 +1,4 @@
-"""`dvt clean`: remove old, unused image tags, keeping the newest few."""
+"""`dkview clean`: remove old, unused image tags, keeping the newest few."""
 
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ def plan_table(decisions: List[Decision], short: bool, show_kept: bool) -> Table
 
 def confirm(question: str) -> bool:
     if not sys.stdin.isatty():
-        sys.stderr.write("dvt: not asking without a terminal; use --yes to delete "
+        sys.stderr.write("dkview: not asking without a terminal; use --yes to delete "
                          "or --dry-run to only look.\n")
         return False
     try:

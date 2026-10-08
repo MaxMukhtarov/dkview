@@ -1,7 +1,7 @@
-"""`dvt errors`: errors and warnings from logs, counted and grouped.
+"""`dkview errors`: errors and warnings from logs, counted and grouped.
 
-    dvt errors                      every service and container on the host
-    dvt errors transfers --since 2d one stack, a service or a container
+    dkview errors                      every service and container on the host
+    dkview errors orders --since 2d one stack, a service or a container
 """
 
 from __future__ import annotations
@@ -430,7 +430,7 @@ def run(argv: Sequence[str], targets: Sequence[str], opts: Options) -> int:
     base = global_options(argv)
     since = opts.since or DEFAULT_SINCE
     if parse_since(since) is None and not re.match(r"\d{4}-\d\d-\d\d", since):
-        sys.stderr.write(f"dvt errors: --since {since}: use a duration like 30m, 6h, 2d "
+        sys.stderr.write(f"dkview errors: --since {since}: use a duration like 30m, 6h, 2d "
                          "or 1w, or a date like 2026-10-07T09:00\n")
         return 2
     docker_since = since_for_docker(since)
@@ -439,7 +439,7 @@ def run(argv: Sequence[str], targets: Sequence[str], opts: Options) -> int:
     if targets:
         sources, missing = resolve(host, base, targets, docker_since)
         for name in missing:
-            sys.stderr.write(f"dvt errors: no stack, service or container called {name}\n")
+            sys.stderr.write(f"dkview errors: no stack, service or container called {name}\n")
         if missing and not sources:
             return 2
     else:

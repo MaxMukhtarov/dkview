@@ -2,7 +2,7 @@
 
 import pytest
 
-from dvt import formats
+from dkview import formats
 
 OLD = {"FAKE_OLD_DOCKER": "1"}
 
@@ -50,7 +50,7 @@ def test_layout_extras():
     assert headers(["docker", "ps", "-s"])[-1] == "SIZE"
     assert headers(["docker", "--context", "prod", "container", "ls"])[0] == "CONTAINER ID"
     assert headers(["docker", "images", "--digests"])[:4] == ["REPOSITORY", "TAG", "DIGEST", "IMAGE ID"]
-    assert headers(["docker", "stack", "ps", "transfers"])[4] == "DESIRED STATE"
+    assert headers(["docker", "stack", "ps", "orders"])[4] == "DESIRED STATE"
 
 
 def test_template_names_each_field():

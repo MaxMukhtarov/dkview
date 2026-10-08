@@ -1,4 +1,4 @@
-"""End-to-end runs of `python -m dvt` against a fake docker."""
+"""End-to-end runs of `python -m dkview` against a fake docker."""
 
 
 def test_ps_table_with_shortcut(fake_docker):
@@ -64,15 +64,15 @@ def test_inspect_full_tree(fake_docker):
     assert "├─ State" in result.stdout
 
 
-def test_dvt_opts_env(fake_docker):
-    result = fake_docker.run("ps", env={"DVT_OPTS": "--cols name"})
+def test_dkview_opts_env(fake_docker):
+    result = fake_docker.run("ps", env={"DKVIEW_OPTS": "--cols name"})
     header = next(line for line in result.stdout.splitlines() if line.startswith("│"))
     assert header.count("│") == 2
 
 
 def test_shell_init(fake_docker):
     result = fake_docker.run("shell-init", "bash")
-    assert "command dvt docker" in result.stdout
+    assert "command dkview docker" in result.stdout
     assert "[ -t 1 ]" in result.stdout
 
 

@@ -1,6 +1,6 @@
 import pytest
 
-from dvt.docker import classify, expand_shortcut, prepare, words
+from dkview.docker import classify, expand_shortcut, prepare, words
 
 
 @pytest.mark.parametrize("command, expected", [

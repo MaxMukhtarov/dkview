@@ -2,14 +2,14 @@ import re
 
 import pytest
 
-from dvt.ansi import colors, strip
-from dvt.layout import choose_widths, render, wrap_cell
-from dvt.styles import styler
-from dvt.table import Table, parse_aligned
+from dkview.ansi import colors, strip
+from dkview.layout import choose_widths, render, wrap_cell
+from dkview.styles import styler
+from dkview.table import Table, parse_aligned
 
 SAMPLES = [
-    "registry.doublewave.uz/doublewave/transfers/api-v2:dev-e55edc11695bf0e572164ed49ea7a640b3a1b434",
-    '"dotnet DoubleWave.Transfers.Api.dll"',
+    "registry.doublewave.example/doublewave/orders/api-v2:dev-e55edc11695bf0e572164ed49ea7a640b3a1b434",
+    '"dotnet DoubleWave.Orders.Api.dll"',
     "0.0.0.0:80->80/tcp, :::443->443/tcp",
     "784KiB / 15.72GiB",
     "a",
@@ -30,8 +30,8 @@ def test_wrap_prefers_spaces():
 
 
 def test_wrap_breaks_paths_after_separators():
-    lines = wrap_cell("registry.example.uz/team/api:v1", 22)
-    assert lines == ["registry.example.uz/", "team/api:v1"]
+    lines = wrap_cell("registry.example.com/team/api:v1", 22)
+    assert lines == ["registry.example.com/", "team/api:v1"]
 
 
 def test_short_columns_keep_full_width():
@@ -75,8 +75,8 @@ def test_empty_table_says_so():
 
 
 def test_marker_stays_with_the_name_when_wrapping():
-    from dvt.layout import wrap_marked
-    lines = wrap_marked("○ doublewave/transfers/api-v2", 20)
+    from dkview.layout import wrap_marked
+    lines = wrap_marked("○ doublewave/orders/api-v2", 20)
     assert lines[0].startswith("○ doublewave")
     assert all(line.startswith("  ") for line in lines[1:])
     assert all(len(line) <= 20 for line in lines)

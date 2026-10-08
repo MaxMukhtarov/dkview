@@ -3,8 +3,8 @@ import re
 
 import pytest
 
-from dvt.ansi import colors, strip
-from dvt.features import inspect, logs
+from dkview.ansi import colors, strip
+from dkview.features import inspect, logs
 
 FIXTURES = __import__("pathlib").Path(__file__).parent / "fixtures"
 
@@ -73,8 +73,8 @@ def test_tree_shape():
 
 
 def test_mark_in_use_handles_both_image_layouts():
-    from dvt.features.images import mark_in_use
-    from dvt.table import Table
+    from dkview.features.images import mark_in_use
+    from dkview.table import Table
 
     legacy = Table(["REPOSITORY", "TAG", "IMAGE ID"], [["alpine", "latest", "294b683cb724"],
                                                       ["busybox", "latest", "fd7dc98638c8"]])
@@ -89,9 +89,9 @@ def test_mark_in_use_handles_both_image_layouts():
 
 
 def test_in_use_dot_is_green():
-    from dvt.ansi import GREEN
-    from dvt.layout import render
-    from dvt.table import Table
+    from dkview.ansi import GREEN
+    from dkview.layout import render
+    from dkview.table import Table
 
     colors.enabled = True
     try:

@@ -1,6 +1,6 @@
 """Which container engine to run: docker, or podman where docker is missing.
 
-DVT_ENGINE=podman (or a full path) picks one explicitly.
+DKVIEW_ENGINE=podman (or a full path) picks one explicitly.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ ENGINES = ("docker", "podman")
 
 
 def name() -> str:
-    chosen = os.environ.get("DVT_ENGINE", "").strip()
+    chosen = os.environ.get("DKVIEW_ENGINE", "").strip()
     if chosen:
         return chosen
     for engine in ENGINES:

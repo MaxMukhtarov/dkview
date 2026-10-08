@@ -12,11 +12,11 @@ import time
 
 import pytest
 
-from dvt import docker as docker_cli
-from dvt import formats
-from dvt.features import tables
-from dvt.runner import capture
-from dvt.table import parse
+from dkview import docker as docker_cli
+from dkview import formats
+from dkview.features import tables
+from dkview.runner import capture
+from dkview.table import parse
 
 from .conftest import ENGINE, PODMAN, ROOT
 
@@ -73,7 +73,7 @@ def test_every_layout_is_covered():
 
 def run(*args, timeout=60):
     return subprocess.run(
-        [sys.executable, "-m", "dvt", "--no-color", "--width", "120", *args],
+        [sys.executable, "-m", "dkview", "--no-color", "--width", "120", *args],
         capture_output=True, text=True, timeout=timeout,
         env={**os.environ, "PYTHONPATH": str(ROOT / "src")},
     )

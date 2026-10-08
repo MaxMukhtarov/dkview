@@ -1,13 +1,13 @@
-"""dvt clean, dvt doctor and dvt images --group."""
+"""dkview clean, dkview doctor and dkview images --group."""
 
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from dvt.features import doctor
-from dvt.features.clean import DELETE, freed_space, plan
-from dvt.features.images import ImageInfo, group_table
-from dvt.units import human_size, parse_docker_time, parse_size
+from dkview.features import doctor
+from dkview.features.clean import DELETE, freed_space, plan
+from dkview.features.images import ImageInfo, group_table
+from dkview.units import human_size, parse_docker_time, parse_size
 
 FIXTURES = Path(__file__).parent / "fixtures"
 NOW = datetime(2026, 10, 7, 12, 0, tzinfo=timezone.utc)
@@ -19,11 +19,11 @@ def image(repo, tag, image_id, days_old, size=100e6, in_use=False):
 
 
 API = [
-    image("reg.uz/api", "v5", "e" * 12, 1),
-    image("reg.uz/api", "v4", "d" * 12, 2),
-    image("reg.uz/api", "v3", "c" * 12, 3),
-    image("reg.uz/api", "v2", "b" * 12, 4, in_use=True),
-    image("reg.uz/api", "v1", "a" * 12, 5),
+    image("reg.example/api", "v5", "e" * 12, 1),
+    image("reg.example/api", "v4", "d" * 12, 2),
+    image("reg.example/api", "v3", "c" * 12, 3),
+    image("reg.example/api", "v2", "b" * 12, 4, in_use=True),
+    image("reg.example/api", "v1", "a" * 12, 5),
 ]
 
 
@@ -67,8 +67,8 @@ def test_dangling_images_go_unless_used():
 
 
 def test_shared_image_id_frees_nothing_while_another_tag_stays():
-    images = [image("reg.uz/api", "v9", "1" * 12, 1), image("reg.uz/api", "old", "2" * 12, 9),
-              image("reg.uz/mirror", "old", "2" * 12, 1)]
+    images = [image("reg.example/api", "v9", "1" * 12, 1), image("reg.example/api", "old", "2" * 12, 9),
+              image("reg.example/mirror", "old", "2" * 12, 1)]
     decisions = plan(images, keep=1)
     assert actions(decisions)["old"] in (DELETE, "keep: newest")
     # api:old is deleted, but mirror:old keeps the same image, so no space is freed.
@@ -110,7 +110,7 @@ def test_clean_yes_removes_only_planned_images(fake_docker):
 def test_group_table_totals():
     table = group_table(API + [image("alpine", "latest", "7" * 12, 30, size=13e6)], short=False)
     api = table.rows[0]
-    assert api[0] == "● reg.uz/api"
+    assert api[0] == "● reg.example/api"
     assert api[1] == "5"
     assert api[2] == "v5"
     assert api[4] == "1 of 5"
@@ -123,7 +123,7 @@ def test_group_flag_works_after_the_command(fake_docker):
     result = fake_docker.run("images", "--group", env=SWARM)
     assert result.returncode == 0
     assert "TOTAL SIZE" in result.stdout
-    assert "registry.example.uz/team/api" in result.stdout
+    assert "registry.example.com/team/api" in result.stdout
     assert "11 tags of 10 images in 6 repositories" in result.stdout  # one ID has two tags
     assert "--group" not in json.dumps(fake_docker.calls())  # never passed to docker
 
@@ -144,7 +144,7 @@ def test_task_parsing():
 def test_hints():
     assert "can't be pulled" in doctor.hint('failed to resolve reference "x"', "api")
     assert "exit 137" in doctor.hint("task: non-zero exit (137)", "api")
-    assert "dvt errors api" in doctor.hint("task: non-zero exit (3)", "api")
+    assert "dkview errors api" in doctor.hint("task: non-zero exit (3)", "api")
     assert doctor.hint("something else", "api") == ""
 
 

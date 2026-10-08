@@ -1,4 +1,4 @@
-"""`dvt doctor`: what is wrong with each swarm service, and why."""
+"""`dkview doctor`: what is wrong with each swarm service, and why."""
 
 from __future__ import annotations
 
@@ -100,7 +100,7 @@ def collect(argv: Sequence[str]) -> Optional[List[ServiceReport]]:
     if listing.code != 0:
         message = listing.stderr.strip()
         if "not a swarm manager" in message or "swarm" in message.lower():
-            sys.stderr.write("dvt doctor: this node is not a swarm manager, "
+            sys.stderr.write("dkview doctor: this node is not a swarm manager, "
                              "so there are no services to check.\n")
         else:
             sys.stderr.write(listing.stderr)
@@ -138,10 +138,10 @@ _HINTS = [
      "node can log in to the registry (deploy with --with-registry-auth)."),
     (r"non-zero exit \(137\)",
      "The container was killed (exit 137): usually out of memory or a failed "
-     "health check. Check memory limits and `dvt errors {name}`."),
+     "health check. Check memory limits and `dkview errors {name}`."),
     (r"non-zero exit \((\d+)\)",
      "The program inside the container exited with an error. "
-     "See why with `dvt errors {name}`."),
+     "See why with `dkview errors {name}`."),
     (r"no suitable node",
      "No node matches the service's placement constraints or resources. "
      "Check constraints, labels and reserved CPU/memory."),
@@ -151,7 +151,7 @@ _HINTS = [
      "A volume or bind mount source doesn't exist on the node."),
     (r"unhealthy container|health check",
      "The container's health check keeps failing. "
-     "Check `dvt inspect` on a task container and the service logs."),
+     "Check `dkview inspect` on a task container and the service logs."),
 ]
 
 
@@ -246,7 +246,7 @@ def render_report(services: List[ServiceReport], opts: Options) -> str:
 def run(argv: Sequence[str], opts: Options) -> int:
     if engine.is_podman(argv):
         sys.stdout.write("Podman has no swarm services, so there is nothing for doctor "
-                         "to check. `dvt errors` shows problems in container logs.\n")
+                         "to check. `dkview errors` shows problems in container logs.\n")
         return 0
     services = collect(argv)
     if services is None:

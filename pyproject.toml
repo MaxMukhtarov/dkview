@@ -3,27 +3,46 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dvt-docker"
-description = "Readable, colored output for docker commands: tables, live stats, inspect summaries, logs and a dashboard."
+name = "dkview"
+description = "Docker and Swarm ops you can read, on servers that have no internet: colored tables, doctor, errors and a dashboard."
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.7"
 dynamic = ["version"]
 authors = [{ name = "Mamurjon" }]
-keywords = ["docker", "cli", "table", "pretty-print", "swarm"]
+keywords = ["docker", "swarm", "podman", "cli", "table", "ops", "offline", "air-gapped"]
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Topic :: System :: Systems Administration",
+    "Topic :: Utilities",
 ]
 
+[project.urls]
+Homepage = "https://github.com/MaxMukhtarov/pprint-docker"
+Source = "https://github.com/MaxMukhtarov/pprint-docker"
+Issues = "https://github.com/MaxMukhtarov/pprint-docker/issues"
+
 [project.scripts]
-dvt = "dvt.cli:main"
+dkview = "dkview.cli:main"
 
 [project.optional-dependencies]
 test = ["pytest"]
 
 [tool.setuptools.dynamic]
-version = { attr = "dvt.__version__" }
+version = { attr = "dkview.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]

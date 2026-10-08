@@ -1,7 +1,7 @@
 import pytest
 
-from dvt.ansi import DIM, GREEN, RED, YELLOW
-from dvt.styles import styler
+from dkview.ansi import DIM, GREEN, RED, YELLOW
+from dkview.styles import styler
 
 
 @pytest.mark.parametrize("header, value, color", [
