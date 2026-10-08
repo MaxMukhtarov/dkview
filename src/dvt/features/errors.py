@@ -20,7 +20,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from ..ansi import BOLD, DIM, GREEN, RED, YELLOW, paint, terminal_width
 from ..formats import fields_template
-from ..layout import render
+from ..layout import render, wrap_cell
 from ..options import Options
 from ..runner import capture
 from ..table import Table
@@ -399,7 +399,10 @@ def render_report(sources: List[Source], opts: Options, since: str,
         out.append(render(summary_table(noisy, now), width, _styler))
     quiet = sorted(s.name for s in sources if not s.groups and not s.problem)
     if quiet and noisy:
-        out.append(paint("✓ nothing in ", GREEN) + paint(", ".join(quiet), DIM))
+        names = wrap_cell(", ".join(quiet), max(20, width - len("nothing in ") - 2))
+        indent = " " * len("✓ nothing in ")
+        out.append(paint("✓ nothing in ", GREEN)
+                   + paint(("\n" + indent).join(names), DIM))
     out.append("")
 
     limit = None if opts.full else TOP

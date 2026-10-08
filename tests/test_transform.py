@@ -5,7 +5,7 @@ import pytest
 from dvt.table import Table
 from dvt.transform import (
     ColumnError, compact_age, find_column, grep_rows, select_columns,
-    short_image, sort_key, sort_rows, tidy,
+    short_image, short_task_name, sort_key, sort_rows, tidy,
 )
 
 
@@ -43,6 +43,37 @@ def test_tidy_shortens_ids_and_digests():
     ]])
     tidy(table, humanize=True, short=False, strip_digests=True)
     assert table.rows[0] == ["26a04fd7c376", "alpine:latest", "s5jbcywkcic8"]
+
+
+def test_short_task_name():
+    assert short_task_name("transfers_api.1.rhl9m97o2vw5ojx4gfxs6o2z0") == "transfers_api.1"
+    assert short_task_name("payments") == "payments"
+    assert short_task_name("web.1") == "web.1"
+
+
+def test_tidy_shortens_task_names_only_with_short():
+    rows = [["transfers_api.1.rhl9m97o2vw5ojx4gfxs6o2z0"]]
+    table = Table(["NAMES"], [list(rows[0])])
+    tidy(table, humanize=True, short=False, strip_digests=False)
+    assert table.rows[0] == rows[0]
+    table = Table(["NAMES"], [list(rows[0])])
+    tidy(table, humanize=True, short=True, strip_digests=False)
+    assert table.rows[0] == ["transfers_api.1"]
+
+
+def test_tidy_keeps_a_script_command_on_one_line():
+    script = ('"sh -c \'i=0\n while :; do echo hello world and good evening too;'
+              '\n sleep 2;\n done\'"')
+    table = Table(["COMMAND"], [[script], ['"/app/api.sh"']])
+    tidy(table, humanize=True, short=False, strip_digests=False)
+    short, plain = table.rows[0][0], table.rows[1][0]
+    assert "\n" not in short and len(short) <= 60
+    assert short.startswith('"sh -c') and short.endswith('…"')
+    assert plain == '"/app/api.sh"'          # short commands are left alone
+    table = Table(["COMMAND"], [[script]])
+    tidy(table, humanize=True, short=False, strip_digests=False, full=True)
+    assert table.rows[0][0] == ('"sh -c \'i=0 while :; do echo hello world and good'
+                                " evening too; sleep 2; done'\"")
 
 
 TABLE = Table(["CONTAINER ID", "NAME", "CPU %", "MEM USAGE / LIMIT", "CREATED"], [

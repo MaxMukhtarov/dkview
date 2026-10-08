@@ -69,7 +69,8 @@ def read_json(prepared: List[str]) -> Tuple[Optional[Result], Optional[Table]]:
 
 def reshape(table: Table, opts: Options, used_images: Optional[Set[str]] = None,
             added_no_trunc: bool = False) -> Tuple[Table, bool]:
-    tidy(table, humanize=False, short=opts.short, strip_digests=added_no_trunc)
+    tidy(table, humanize=False, short=opts.short, strip_digests=added_no_trunc,
+         full=opts.full)
     # Mark before --grep (so `--grep ○` finds unused images) and before
     # --cols (which may drop the IMAGE ID column the marks rely on).
     marked = used_images is not None and images.mark_in_use(table, used_images)
@@ -79,7 +80,7 @@ def reshape(table: Table, opts: Options, used_images: Optional[Set[str]] = None,
     if opts.sort:
         sort_rows(table, opts.sort, opts.desc)
     if opts.humanize:
-        tidy(table, humanize=True, short=False, strip_digests=False)
+        tidy(table, humanize=True, short=False, strip_digests=False, full=opts.full)
     if opts.cols:
         table = select_columns(table, opts.cols)
     return table, marked

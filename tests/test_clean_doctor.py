@@ -124,6 +124,7 @@ def test_group_flag_works_after_the_command(fake_docker):
     assert result.returncode == 0
     assert "TOTAL SIZE" in result.stdout
     assert "registry.example.uz/team/api" in result.stdout
+    assert "11 tags of 10 images in 6 repositories" in result.stdout  # one ID has two tags
     assert "--group" not in json.dumps(fake_docker.calls())  # never passed to docker
 
 

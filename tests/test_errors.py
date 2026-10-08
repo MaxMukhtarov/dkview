@@ -84,6 +84,18 @@ def test_report_layout(fixture_lines):
     assert {len(line) for line in out.splitlines() if line.startswith("  ┌")} == {100}
 
 
+def test_quiet_sources_wrap_to_the_width(fixture_lines):
+    api = errors.Source("transfers_api", "service", [])
+    for line in fixture_lines("errors_logs_transfers_api.txt"):
+        api.add(line)
+    quiet = [errors.Source("quiet-" + "x" * 12 + str(i), "service", []) for i in range(6)]
+    out = errors.render_report(quiet + [api], Options(width=70), "30m", now=NOW)
+    wrapped = [l for l in out.splitlines() if "quiet-" in l]
+    assert len(wrapped) > 1                       # the list is wrapped, not cut
+    assert max(len(l) for l in wrapped) <= 70
+    assert wrapped[1].startswith(" " * len("x nothing in "))
+
+
 def _resolve(*targets):
     host = errors.Host(
         stacks=["transfers"],

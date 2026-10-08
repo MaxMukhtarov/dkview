@@ -1,32 +1,102 @@
 # dvt
 
-**Readable, colored output for docker commands.**
+**Docker and Swarm ops you can read, on servers that have no internet.**
 
-`dvt` runs a docker command for you and turns its output into a clean,
-width-fitted, colored table. Problems stand out at a glance: unhealthy
-containers are red, services missing replicas are red, busy CPUs are yellow.
-Commands that are not tables (`run`, `exec`, `build`, `logs -f`, typos...)
-behave exactly like plain docker.
+`dvt` is one Python file tree you copy onto a server. It runs the docker
+command you asked for and prints the answer as a width-fitted, colored table,
+and it adds the few views an operator actually wants at 3am: what is broken,
+what is in the logs, and what the host is doing right now. Nothing to install,
+no agent, no daemon, no network access, no root.
+
+![dvt in a terminal: ps, errors, doctor and dash](docs/demo.gif)
+
+## Why it exists
+
+Swarm hosts behind a company firewall are still operated the way they were ten
+years ago: `docker service ls` into an 80-column PuTTY window, columns wrapping
+into each other, then `docker service ps <name> --no-trunc` to find out what the
+error actually said, then `docker service logs` for each service in turn. The
+graphical tools that fix this (Portainer, Swarmpit, Grafana) all want a
+container, a port, a login and usually internet access, which is exactly what
+these machines don't have.
+
+`dvt` takes the other route: a single command on the server you are already
+logged into.
 
 ```
-$ dvt service ls
-┌──────────────┬────────┬────────────┬──────────┬────────────────────────┬────────────────┐
-│ ID           │ NAME   │ MODE       │ REPLICAS │ IMAGE                  │ PORTS          │
-├──────────────┼────────┼────────────┼──────────┼────────────────────────┼────────────────┤
-│ mgca4i2paztn │ api    │ replicated │ 2/2      │ alpine:latest          │ *:9000->80/tcp │   <- green
-│ o1cs5dpu3fsr │ broken │ replicated │ 0/1      │ alpine:nonexistent-tag │                │   <- red
-└──────────────┴────────┴────────────┴──────────┴────────────────────────┴────────────────┘
+$ dvt doctor
+Swarm services: 4 healthy · 1 failing
+
+✗ billing_report  0/1 replicas · registry.doublewave.uz/doublewave/billing/report:nonexistent-tag
+  5 failed tasks in recent history · now: Rejected 3s ago
+  ┌───────┬──────────┬────────┬───────┬────────────────────────────────────────────────┐
+  │ TIMES │ STATE    │ LAST   │ NODES │ ERROR                                          │
+  ├───────┼──────────┼────────┼───────┼────────────────────────────────────────────────┤
+  │ 5×    │ Rejected │ 3s ago │ vm    │ failed to resolve reference "registry.         │
+  │       │          │        │       │ doublewave.uz/doublewave/billing/report:       │
+  │       │          │        │       │ nonexistent-tag": failed to do request: Head   │
+  │       │          │        │       │ "https://registry.doublewave.uz/v2/doublewave/ │
+  │       │          │        │       │ billing/report/manifests/nonexistent-tag":     │
+  │       │          │        │       │ Forbidden                                      │
+  └───────┴──────────┴────────┴───────┴────────────────────────────────────────────────┘
+  → The image can't be pulled. Check the image name and tag, and that the node can
+    log in to the registry (deploy with --with-registry-auth).
 ```
+
+The same question answered with plain docker takes `service ls`, then
+`service ps`, then reading a 400-character error line that PuTTY wrapped four
+times.
+
+## The three commands worth learning first
+
+| Command | Answers |
+|---|---|
+| `dvt doctor` | Which services are failing, and why, with the repeated task errors grouped and a plain-language hint |
+| `dvt errors` | What errors and warnings appeared in every service and container log in the last 30 minutes, grouped so 190 identical timeouts are one row |
+| `dvt dash` | One screen: host, containers, services, disk, and what needs attention |
+
+Everything else is plain docker, only readable:
+
+```
+$ dvt --short service ls
+┌──────────────┬──────────────────┬────────────┬──────────┬───────────────────────┬────────────────┐
+│ ID           │ NAME             │ MODE       │ REPLICAS │ IMAGE                 │ PORTS          │
+├──────────────┼──────────────────┼────────────┼──────────┼───────────────────────┼────────────────┤
+│ asp8ftlsjz63 │ billing_report   │ replicated │ 0/1      │ doublewave/billing/   │                │
+│              │                  │            │          │ report:nonexistent-   │                │
+│              │                  │            │          │ tag                   │                │
+│ o2bhjctpc1ss │ traefik          │ replicated │ 1/1      │ doublewave/devops/    │ *:8080->80/tcp │
+│              │                  │            │          │ registry/traefik:v3.  │                │
+│              │                  │            │          │ 7.13                  │                │
+│ qbrn32zkgop7 │ transfers_api    │ replicated │ 2/2      │ doublewave/transfers/ │ *:9000->80/tcp │
+│              │                  │            │          │ api:testing-c5cbfead  │                │
+└──────────────┴──────────────────┴────────────┴──────────┴───────────────────────┴────────────────┘
+```
+
+Red means a service is missing replicas, green means it is complete. Commands
+that are not tables (`run`, `exec`, `build`, `logs -f`, typos...) are passed
+through to docker untouched.
+
+## Is it for you?
+
+It fits if you keep Swarm or Compose stacks on Linux servers you reach over
+SSH, especially ones with no internet access, and you read the output on a
+terminal that is 80 to 120 columns wide.
+
+It is also fine on a laptop with Docker Desktop or Podman, but there the
+graphical tools are right there, so you will get less out of it.
 
 * Repository: https://github.com/MaxMukhtarov/pprint-docker (branch `feature`)
-* Version: 3.0.0b2 (until 2.4.1 this tool was called **pprint**; see
+* Version: 3.0.0b3 (until 2.4.1 this tool was called **pprint**; see
   [Switching from pprint](#switching-from-pprint))
 * Needs: Python 3.7 or newer, and Docker 20.10 or newer or Podman 4 or newer. No other
   packages, no internet. Works on Linux, macOS and Windows (Docker Desktop).
+* Install on a server with no internet: [method A](#a-from-the-source-archive-no-internet-needed-recommended-for-servers),
+  one `tar -xzf` and a three-line launcher script.
 
 ---
 
-## Contents
+## Manual
 
 1. [Install](#1-install)
 2. [Check that it works](#2-check-that-it-works)
@@ -159,7 +229,7 @@ To make plain `docker` use dvt in PowerShell, see section 7.
 
 ```sh
 type dvt            # should point to ~/bin/dvt (or your chosen path)
-dvt --version       # dvt 3.0.0b2
+dvt --version       # dvt 3.0.0b3
 dvt ps              # your containers as a table
 ```
 
@@ -220,7 +290,10 @@ What dvt does to tables:
 * **Nothing is cut off.** For commands that support it, dvt asks
   docker for full values (`--no-trunc`) so COMMAND, ERROR and similar
   columns aren't shortened with `…`. Long values wrap inside their cell
-  instead, breaking after `/ : - _ .` rather than mid-word.
+  instead, breaking after `/ : - _ .` rather than mid-word. The one
+  exception is COMMAND: a container started with a whole shell script in
+  its command is cut to 60 characters, because otherwise it pushes every
+  other column off the screen. `--full` prints it whole.
 * **IDs stay short.** Full 64-character IDs and image digests
   (`@sha256:...`) are trimmed back to what docker normally shows.
 * **Short columns keep their width.** CREATED, STATUS and PORTS never get
@@ -643,7 +716,7 @@ dvt's own options go **before** the command:
 | `--sort COL` | Sort rows by a column. Numbers, sizes (`512MiB`), percentages and ages sort by value. | `dvt --sort created images` |
 | `--desc` | Sort largest first. | `dvt --sort cpu --desc stats` |
 | `--grep REGEX` | Keep only rows (or log lines) matching, case-insensitive. | `dvt --grep api ps` |
-| `--short` | Hide the registry host in image names (`registry.example.uz/team/api:v1` → `team/api:v1`). | `dvt --short ps` |
+| `--short` | Hide the registry host in image names (`registry.example.uz/team/api:v1` → `team/api:v1`), and drop the task ID from swarm container names (`api.1.rhl9m97o2vw5…` → `api.1`). | `dvt --short ps` |
 | `--long-times` | Keep `4 minutes ago` instead of `4m ago`. | `dvt --long-times ps` |
 | `--trunc` | Let docker truncate values as it normally does. | `dvt --trunc ps` |
 | `--width N` | Table width in characters (default: the terminal width). | `dvt --width 120 ps` |
@@ -655,7 +728,7 @@ dvt's own options go **before** the command:
 | `-w`, `--watch` | Redraw the output every few seconds until Ctrl+C. |
 | `-n SEC`, `--interval SEC` | Seconds between redraws (default 2, minimum 0.5). |
 | `--once` | `stats`: print one snapshot instead of the live view. |
-| `--full` | `inspect`: show every field as a tree instead of the summary. |
+| `--full` | `inspect`: show every field as a tree instead of the summary. On tables: print the whole COMMAND instead of the first 60 characters. |
 | `--raw` | Run the command untouched. |
 | `--group` | `images`: one row per repository with total and unused size. |
 

@@ -47,7 +47,25 @@ def short_image(image: str) -> str:
     return image
 
 
-def tidy(table: Table, *, humanize: bool, short: bool, strip_digests: bool) -> None:
+COMMAND_LIMIT = 60   # a whole entrypoint script would push every column off screen
+
+
+def one_line(text: str) -> str:
+    """A cell docker filled with a script: newlines and runs of spaces out."""
+    return " ".join(text.split())
+
+
+_TASK_NAME_RE = re.compile(r"^(.+\.\d+)\.[0-9a-z]{25}$")
+
+
+def short_task_name(name: str) -> str:
+    """'api.1.rhl9m97o2vw5ojx4gfxs6o2z0' -> 'api.1': the slot is enough."""
+    m = _TASK_NAME_RE.match(name)
+    return m.group(1) if m else name
+
+
+def tidy(table: Table, *, humanize: bool, short: bool, strip_digests: bool,
+         full: bool = False) -> None:
     """Make values shorter in place, without losing meaning."""
     for col, header in enumerate(h.upper() for h in table.headers):
         for row in table.rows:
@@ -55,11 +73,19 @@ def tidy(table: Table, *, humanize: bool, short: bool, strip_digests: bool) -> N
             if _FULL_ID_RE.match(value) and (header in ID_COLUMNS or ":" in value
                                               or len(value) == 64):
                 value = value.split(":")[-1][:12]
+            if short and header in ("NAMES", "NAME"):
+                value = ", ".join(short_task_name(n) for n in value.split(","))
             if header in IMAGE_COLUMNS:
                 if strip_digests:
                     value = _DIGEST_RE.sub("", value)
                 if short:
                     value = short_image(value)
+            if header == "COMMAND":
+                value = one_line(value)
+                if not full and len(value) > COMMAND_LIMIT:
+                    quote = '"' if value.startswith('"') else ""
+                    keep = COMMAND_LIMIT - 1 - len(quote)
+                    value = value[:keep].rstrip() + "…" + quote
             if humanize and header in TIME_COLUMNS:
                 value = compact_age(value)
             row[col] = value

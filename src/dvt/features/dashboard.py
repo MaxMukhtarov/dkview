@@ -15,7 +15,7 @@ from ..options import Options
 from ..runner import capture
 from ..styles import container_status, replicas, styler
 from ..table import Table
-from ..transform import compact_age, short_image
+from ..transform import compact_age, short_image, short_task_name
 
 
 def _json_lines(argv: List[str]) -> Optional[List[Dict[str, Any]]]:
@@ -135,7 +135,7 @@ def frame(opts: Options, width: Optional[int] = None) -> str:
         ports = ", ".join(dict.fromkeys(p.strip() for p in ports.split(",") if p.strip()))
         image = c.get("Image", "")
         containers.rows.append([
-            c.get("Names", ""), compact_age(c.get("Status", "")),
+            short_task_name(c.get("Names", "")), compact_age(c.get("Status", "")),
             short_image(image) if opts.short else image,
             s.get("CPUPerc", ""), mem, ports,
         ])

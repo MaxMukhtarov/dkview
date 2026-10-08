@@ -204,8 +204,10 @@ def run_group(argv: Sequence[str], opts: Options) -> int:
     unused = unique_size(i for i in images if not i.in_use)
     sys.stdout.write(render(table, opts.width, styler) + "\n")
     sys.stdout.write(legend() + "\n")
+    ids = len({i.id for i in images})
+    count = f"{len(images)} images" if ids == len(images) else f"{len(images)} tags of {ids} images"
     sys.stdout.write(
-        f"{len(images)} images in {len(table.rows)} repositories, "
+        f"{count} in {len(table.rows)} repositories, "
         f"{human_size(total)} in total, " + paint(f"{human_size(unused)} not used", BOLD)
         + paint("  (sizes can share layers, so real savings may be smaller)", DIM) + "\n")
     return 0
