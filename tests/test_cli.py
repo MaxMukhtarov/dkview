@@ -5,7 +5,8 @@ def test_ps_table_with_shortcut(fake_docker):
     result = fake_docker.run("ps", "-a")
     assert result.returncode == 0
     assert "┌" in result.stdout and "NAMES" in result.stdout
-    assert fake_docker.calls() == [["ps", "-a", "--no-trunc"]]
+    calls = fake_docker.calls()
+    assert len(calls) == 1 and calls[0][:4] == ["ps", "-a", "--no-trunc", "--format"]
     # Full 64-character IDs are shortened back to 12.
     assert "26a04fd7c376e78" not in result.stdout
 
@@ -15,7 +16,7 @@ def test_stats_does_not_hang(fake_docker):
     result = fake_docker.run("docker", "stats", timeout=10)
     assert result.returncode == 0
     assert "CPU %" in result.stdout
-    assert fake_docker.calls()[0][-1] == "--no-stream"
+    assert "--no-stream" in fake_docker.calls()[0]
 
 
 def test_unknown_command_passes_through(fake_docker):

@@ -7,8 +7,10 @@ what pprint actually ran.
 
 import json
 import os
+import re
 import sys
 import time
+from typing import Optional
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 FIXTURES = os.path.join(HERE, "fixtures")
@@ -36,6 +38,38 @@ def errors_scenario(args, words) -> int:
     return 0
 
 
+# Commands that answer a `--format '{"ID":{{json .ID}},...}'` template.
+JSON_TABLES = {
+    ("ps",): "ps.jsonl", ("container", "ls"): "ps.jsonl",
+    ("images",): "images_table.jsonl", ("image", "ls"): "images_table.jsonl",
+    ("service", "ls"): "service_ls.jsonl", ("service", "ps"): "service_ps.jsonl",
+    ("node", "ls"): "node_ls.jsonl", ("stats",): "stats.jsonl",
+}
+
+
+def json_template(args, words) -> Optional[int]:
+    """Fill a field-by-field JSON template like docker does; None if not one."""
+    template = next((a for a in args if a.startswith('{"')), None)
+    if template is None:
+        return None
+    words = [w for w in words if w != template]
+    name = JSON_TABLES.get(tuple(words[:1])) or JSON_TABLES.get(tuple(words[:2]))
+    if name is None:
+        return None
+    fields = re.findall(r"\{\{json \.(\w+)\}\}", template)
+    # FAKE_OLD_DOCKER: a docker that lacks the fields, so pprint falls back.
+    old = os.environ.get("FAKE_OLD_DOCKER")
+    for line in fixture(name).splitlines():
+        item = json.loads(line)
+        for field in fields:
+            if old or field not in item:
+                sys.stderr.write(f'template parsing error: template: :1:2: executing "" at '
+                                 f'<.{field}>: can\'t evaluate field {field} in type formatter\n')
+                return 1
+        sys.stdout.write(json.dumps({f: item[f] for f in fields}) + "\n")
+    return 0
+
+
 def main() -> int:
     args = sys.argv[1:]
     log = os.environ.get("FAKE_DOCKER_LOG")
@@ -52,6 +86,11 @@ def main() -> int:
 
     if os.environ.get("FAKE_SCENARIO") == "errors":
         return errors_scenario(args, words)
+
+    if os.environ.get("FAKE_SCENARIO") != "swarm" or not ({"-q", "{{json .}}"} & set(args)):
+        code = json_template(args, words)
+        if code is not None:
+            return code
 
     if swarm and cmd[:1] == ["ps"] and "-q" in args:
         sys.stdout.write(fixture("container_ids.txt"))
@@ -87,6 +126,8 @@ def main() -> int:
         sys.stdout.write(fixture("service_ls.txt"))
     elif cmd == ["service", "ps"]:
         sys.stdout.write(fixture("service_ps.txt"))
+    elif cmd == ["node", "ls"]:
+        sys.stdout.write(fixture("node_ls.txt"))
     elif cmd[:1] == ["images"] or cmd == ["image", "ls"]:
         name = "images_legacy.txt" if "--no-trunc" in args else "images_v29.txt"
         sys.stdout.write(fixture(name))

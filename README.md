@@ -19,7 +19,7 @@ $ pprint service ls
 ```
 
 * Repository: https://github.com/MaxMukhtarov/pprint-docker (branch `feature`)
-* Version: 2.3.0
+* Version: 2.4.0
 * Needs: Python 3.7 or newer and the docker CLI. No other packages, no internet.
 
 ---
@@ -126,7 +126,7 @@ code inside it, but `unzip -l dist/pprint` lists what it contains.
 
 ```sh
 type pprint            # should point to ~/bin/pprint (or your chosen path)
-pprint --version       # pprint 2.3.0
+pprint --version       # pprint 2.4.0
 pprint ps              # your containers as a table
 ```
 
@@ -850,6 +850,11 @@ Scripts should call `docker` directly, or use `pprint --raw`. With the
 shell integration from section 7, `docker` in pipes and scripts already
 gets docker's raw output.
 
+**Does it work with old docker versions?**
+Yes. pprint asks docker for JSON where it can, which is exact even when
+values contain spaces or cells are empty. If docker doesn't understand the
+request, pprint quietly reads the normal text output instead.
+
 **Can I still use `--format`?**
 Yes. `pprint ps --format '{{.Names}}'` is passed straight through.
 `--format 'table ...'` output is still formatted as a table.
@@ -880,6 +885,7 @@ pprint/
 │   ├── cli.py              options and dispatch to the right feature
 │   ├── docker.py           which docker command is it; flags to add
 │   ├── table.py            Table model; parsing column-aligned output
+│   ├── formats.py          reading list commands as JSON (with text fallback)
 │   ├── layout.py           column widths, wrapping, drawing the box
 │   ├── transform.py        short IDs/ages/images, --cols, --sort, --grep
 │   ├── styles.py           which cell gets which color
@@ -911,10 +917,14 @@ pprint/
 2. `docker.py` classifies the command as table, stats, logs, inspect or
    passthrough.
 3. Passthrough commands run attached to your terminal, untouched.
-4. Table commands run with their output captured. `table.py` finds the
-   column boundaries from the header positions, `transform.py` shortens,
-   filters and sorts, and `layout.py` draws the table with colors from
-   `styles.py`.
+4. Table commands run with their output captured. For `ps`, `images`,
+   `service ls`/`ps`, `stack ps`, `node ls`/`ps` and `stats`, `formats.py`
+   asks docker for one JSON object per row (a `--format` template naming
+   each field) and builds the table with docker's own headers. Every other
+   table command, and a docker too old for the template, goes through
+   `table.py`, which finds the column boundaries from the header
+   positions. Then `transform.py` shortens, filters and sorts, and
+   `layout.py` draws the table with colors from `styles.py`.
 
 ### Run from source without installing
 
@@ -944,5 +954,7 @@ make clean         # remove build output
 ### Adding a new table command
 
 Add it to `TABLE_COMMANDS` in `src/pprint_docker/docker.py`. If docker
-supports `--no-trunc` for it, add it to `NO_TRUNC` as well. To color a new
+supports `--no-trunc` for it, add it to `NO_TRUNC` as well. To read it as
+JSON, add its columns (header and `--format` field) to `LAYOUTS` in
+`formats.py` and a JSON fixture to `tests/fixtures`. To color a new
 column, add a rule in `styles.py`. Add a test in `tests/test_docker.py`.

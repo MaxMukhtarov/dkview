@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import sys
 from dataclasses import replace
-from typing import Callable, Optional, Sequence, Set, Tuple
+from typing import Callable, List, Optional, Sequence, Set, Tuple
 
-from .. import docker
+from .. import docker, formats
 from ..layout import render
 from ..options import Options
-from ..runner import capture
+from ..runner import Result, capture
 from ..styles import styler
 from ..table import Table, parse
 from ..transform import ColumnError, grep_rows, select_columns, sort_rows, tidy
@@ -19,14 +19,17 @@ from . import images
 def build(argv: Sequence[str], opts: Options) -> Tuple[int, str, str]:
     """Run a table command and return (exit code, formatted text, stderr)."""
     prepared = docker.prepare(argv, opts.trunc) if docker.is_docker(argv) else list(argv)
-    result = capture(prepared)
-
-    if not result.stdout.strip():
+    result, table = read_json(prepared)
+    if result is not None and table is None:
+        # A real failure (no daemon, no such service): report it as is.
         return result.code, result.stdout, result.stderr
-
-    table = parse(result.stdout.splitlines())
-    if table is None:
-        return result.code, result.stdout, result.stderr
+    if result is None:
+        result = capture(prepared)
+        if not result.stdout.strip():
+            return result.code, result.stdout, result.stderr
+        table = parse(result.stdout.splitlines())
+        if table is None:
+            return result.code, result.stdout, result.stderr
 
     used = None
     if docker.is_docker(argv) and images.is_image_list(argv):
@@ -42,6 +45,26 @@ def build(argv: Sequence[str], opts: Options) -> Tuple[int, str, str]:
     if marked and table.rows:
         out += images.legend() + "\n"
     return result.code, out, result.stderr
+
+
+def read_json(prepared: List[str]) -> Tuple[Optional[Result], Optional[Table]]:
+    """Ask docker for one JSON object per row.
+
+    Returns (result, table) on success, (result, None) when docker failed
+    for a real reason, and (None, None) when the text output should be
+    read instead: a command without a JSON layout, or a docker too old to
+    understand the template.
+    """
+    columns = formats.layout(prepared)
+    if columns is None:
+        return None, None
+    result = capture(prepared + formats.format_args(columns))
+    if result.code == 0:
+        table = formats.to_table(columns, result.stdout)
+        return (result, table) if table is not None else (None, None)
+    if formats.is_format_error(result.stderr):
+        return None, None
+    return result, None
 
 
 def reshape(table: Table, opts: Options, used_images: Optional[Set[str]] = None,

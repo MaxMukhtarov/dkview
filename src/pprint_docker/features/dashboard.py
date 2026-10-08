@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
 from ..ansi import BOLD, DIM, GREEN, RED, YELLOW, paint, terminal_width
+from ..formats import fields_template
 from ..layout import render
 from ..options import Options
 from ..runner import capture
@@ -35,14 +36,18 @@ def collect() -> Dict[str, Any]:
     """Ask docker for everything at once; `stats` alone takes ~2 seconds."""
     commands = {
         "info": ["docker", "info", "--format", "{{json .}}"],
-        "ps": ["docker", "ps", "-a", "--format", "{{json .}}"],
+        "ps": ["docker", "ps", "-a", "--format",
+               fields_template(["ID", "Names", "Image", "State", "Status", "Ports"])],
         "stats": ["docker", "stats", "--no-stream", "--format", "{{json .}}"],
         "services": ["docker", "service", "ls", "--format", "{{json .}}"],
         "df": ["docker", "system", "df", "--format", "{{json .}}"],
     }
     with ThreadPoolExecutor(len(commands)) as pool:
         futures = {k: pool.submit(_json_lines, v) for k, v in commands.items()}
-        return {k: f.result() for k, f in futures.items()}
+        data = {k: f.result() for k, f in futures.items()}
+    if data["ps"] is None:  # docker too old for .State in a template
+        data["ps"] = _json_lines(["docker", "ps", "-a", "--format", "{{json .}}"])
+    return data
 
 
 def _header(info: Dict[str, Any]) -> str:

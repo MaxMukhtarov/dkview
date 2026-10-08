@@ -1,0 +1,2 @@
+{"ID": "mgca4i2paztn", "Name": "api", "Mode": "replicated", "Replicas": "2/2", "Image": "alpine:latest", "Ports": "*:9000->80/tcp"}
+{"ID": "o1cs5dpu3fsr", "Name": "broken", "Mode": "replicated", "Replicas": "0/1", "Image": "alpine:nonexistent-tag", "Ports": ""}
