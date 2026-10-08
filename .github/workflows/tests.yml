@@ -27,6 +27,46 @@ jobs:
       - run: python -m pyflakes src tests
       - run: python -m pytest -q
 
+  desktop:
+    # Docker Desktop machines: no daemon here, but the code must run on the OS
+    # (colors, encodings, paths). Tests needing the fake docker skip on Windows.
+    name: unit tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install pytest
+      - run: python -m pytest -q
+      - name: Run the command itself
+        env:
+          PYTHONPATH: src
+        run: |
+          python -m dvt --version
+          python -m dvt --help
+          python -m dvt shell-init powershell
+
+  podman:
+    name: real podman
+    runs-on: ubuntu-24.04
+    env:
+      DVT_ENGINE: podman
+      REAL_DOCKER: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: podman version
+      - run: podman pull docker.io/library/busybox:latest
+      - run: python -m pip install pytest
+      - run: python -m pytest -v tests/real
+
   docker:
     # The whole tool against real docker daemons, oldest supported to newest.
     name: real docker ${{ matrix.docker }}

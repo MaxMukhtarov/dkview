@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
+from .. import engine
 from ..ansi import BOLD, DIM, GREEN, RED, YELLOW, paint, terminal_width
 from ..layout import render
 from ..options import Options
@@ -243,6 +244,10 @@ def render_report(services: List[ServiceReport], opts: Options) -> str:
 
 
 def run(argv: Sequence[str], opts: Options) -> int:
+    if engine.is_podman(argv):
+        sys.stdout.write("Podman has no swarm services, so there is nothing for doctor "
+                         "to check. `dvt errors` shows problems in container logs.\n")
+        return 0
     services = collect(argv)
     if services is None:
         return 1

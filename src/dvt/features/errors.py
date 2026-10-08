@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Optional, Sequence, Tuple
 
 from ..ansi import BOLD, DIM, GREEN, RED, YELLOW, paint, terminal_width
+from ..formats import fields_template
 from ..layout import render
 from ..options import Options
 from ..runner import capture
@@ -186,7 +187,7 @@ def read(source: Source, grep: Optional["re.Pattern[str]"] = None,
         process = subprocess.Popen(
             source.command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # apps log to stderr too
-            text=True, errors="replace")
+            text=True, encoding="utf-8", errors="replace")
     except FileNotFoundError:
         source.problem = f"{source.command[0]}: command not found"
         return source
@@ -230,8 +231,11 @@ def _json_lines(text: str) -> List[dict]:
     return items
 
 
-def _labels(text: str) -> Dict[str, str]:
-    pairs = (item.partition("=") for item in (text or "").split(","))
+def _labels(text: object) -> Dict[str, str]:
+    """docker gives "a=1,b=2"; podman gives {"a": "1"} or null."""
+    if isinstance(text, dict):
+        return {str(k): str(v) for k, v in text.items()}
+    pairs = (item.partition("=") for item in str(text or "").split(","))
     return {key: value for key, _, value in pairs if key}
 
 
@@ -246,7 +250,8 @@ class Host:
         services = capture(base + ["service", "ls", "--format", "{{json .}}"])
         stacks = capture(base + ["stack", "ls", "--format", "{{.Name}}"]) \
             if services.code == 0 else None
-        containers = capture(base + ["ps", "-a", "--no-trunc", "--format", "{{json .}}"])
+        containers = capture(base + ["ps", "-a", "--no-trunc", "--format",
+                                     fields_template(["ID", "Names", "Labels"])])
         return cls(
             stacks=stacks.stdout.split() if stacks and stacks.code == 0 else [],
             services=_json_lines(services.stdout) if services.code == 0 else [],

@@ -30,6 +30,8 @@ def fixture_lines():
 @pytest.fixture
 def fake_docker(tmp_path):
     """Put a fake `docker` first on PATH; returns a helper to run dvt."""
+    if os.name == "nt":
+        pytest.skip("the fake docker is a shell script")
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     docker = bin_dir / "docker"
@@ -56,6 +58,6 @@ def fake_docker(tmp_path):
         def calls(self):
             if not log.exists():
                 return []
-            return [json.loads(line) for line in log.read_text().splitlines()]
+            return [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
 
     return Runner()

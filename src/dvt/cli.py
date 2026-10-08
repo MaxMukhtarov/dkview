@@ -9,8 +9,8 @@ import shlex
 import sys
 from typing import List, Optional, Sequence
 
-from . import __version__, docker
-from .ansi import colors
+from . import __version__, docker, engine
+from .ansi import colors, prepare_output
 from .features import clean, dashboard, doctor, errors, images, inspect, live, logs, shell, tables
 from .options import Options
 from .runner import passthrough
@@ -153,9 +153,9 @@ def run(argv: Sequence[str]) -> int:
         return run(before + command[1:] + [command[0]])
 
     if command[0] == "clean":
-        return clean.run(["docker"], opts)
+        return clean.run([engine.name()], opts)
     if command[0] == "doctor":
-        return doctor.run(["docker"], opts)
+        return doctor.run([engine.name()], opts)
     if command[0] == "dash":
         frame = lambda width: dashboard.frame(opts, width)  # noqa: E731
         if opts.watch:
@@ -223,7 +223,7 @@ def run_errors(parser: argparse.ArgumentParser, rest: List[str], opts: Options) 
         colors.enabled = False
     elif args.color:
         colors.enabled = True
-    return errors.run(["docker"], args.targets, opts)
+    return errors.run([engine.name()], args.targets, opts)
 
 
 def run_table(command: List[str], opts: Options) -> int:
@@ -238,13 +238,14 @@ def shell_init(rest: List[str]) -> int:
         sys.stdout.write(shell.USAGE)
         return 0
     if name not in shell.SCRIPTS:
-        sys.stderr.write(f"dvt: unsupported shell '{name}' (bash, zsh, fish)\n")
+        sys.stderr.write(f"dvt: unsupported shell '{name}' (bash, zsh, fish, powershell)\n")
         return 2
     sys.stdout.write(shell.script(name))
     return 0
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
+    prepare_output()
     try:
         return run(sys.argv[1:] if argv is None else argv)
     except KeyboardInterrupt:

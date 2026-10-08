@@ -23,6 +23,7 @@ def capture(argv: Sequence[str]) -> Result:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
+            encoding="utf-8",  # what docker writes, whatever the local code page
             errors="replace",
         )
         return Result(process.returncode, process.stdout, process.stderr)

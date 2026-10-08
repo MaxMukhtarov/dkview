@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import List, Sequence
+
+from . import engine
 
 # Options that take a separate value (`--context prod`, `-f file.yml`,
 # `--filter status=exited`). The value is skipped when looking for the
@@ -59,13 +60,14 @@ DOCKER_COMMANDS = {
 
 
 def is_docker(argv: Sequence[str]) -> bool:
-    return bool(argv) and os.path.basename(argv[0]) in {"docker", "docker.exe"}
+    """docker, or podman, which takes the same commands."""
+    return bool(argv) and engine.kind(argv[0]) != ""
 
 
 def expand_shortcut(argv: List[str]) -> List[str]:
-    """`dvt ps -a` -> `docker ps -a`."""
+    """`dvt ps -a` -> `docker ps -a` (or `podman ps -a`)."""
     if argv and argv[0] in DOCKER_COMMANDS:
-        return ["docker"] + argv
+        return [engine.name()] + argv
     return argv
 
 

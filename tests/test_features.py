@@ -33,7 +33,7 @@ def test_log_coloring_keeps_text_and_highlights_grep():
 
 
 def test_container_summary():
-    data = json.loads((FIXTURES / "inspect_containers.json").read_text())
+    data = json.loads((FIXTURES / "inspect_containers.json").read_text(encoding="utf-8"))
     title, sections = inspect.container_summary(data[0])
     overview = dict(sections[0][1])
     assert title.startswith("web")
@@ -44,7 +44,7 @@ def test_container_summary():
 
 
 def test_unhealthy_container_shows_last_check():
-    data = json.loads((FIXTURES / "inspect_containers.json").read_text())
+    data = json.loads((FIXTURES / "inspect_containers.json").read_text(encoding="utf-8"))
     _, sections = inspect.container_summary(data[1])
     overview = dict(sections[0][1])
     assert "unhealthy" in overview["Status"]
@@ -52,7 +52,7 @@ def test_unhealthy_container_shows_last_check():
 
 
 def test_service_summary():
-    data = json.loads((FIXTURES / "inspect_service.json").read_text())
+    data = json.loads((FIXTURES / "inspect_service.json").read_text(encoding="utf-8"))
     title, sections = inspect.service_summary(data[0])
     overview = dict(sections[0][1])
     assert title.startswith("api")
@@ -61,7 +61,7 @@ def test_service_summary():
 
 
 def test_unknown_objects_fall_back_to_tree():
-    data = json.loads((FIXTURES / "inspect_network.json").read_text())
+    data = json.loads((FIXTURES / "inspect_network.json").read_text(encoding="utf-8"))
     assert inspect.kind_of(data[0]) is None
     lines = inspect.tree(data[0])
     assert any(line.startswith("├─ Name: bridge") for line in lines)

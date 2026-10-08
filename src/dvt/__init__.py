@@ -1,3 +1,3 @@
 """dvt: readable, colored output for docker commands."""
 
-__version__ = "3.0.0b1"
+__version__ = "3.0.0b2"

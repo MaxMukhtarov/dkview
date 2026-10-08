@@ -26,7 +26,16 @@ function docker --wraps docker
 end
 """
 
-SCRIPTS = {"bash": POSIX, "zsh": POSIX, "sh": POSIX, "fish": FISH}
+POWERSHELL = """\
+# dvt: format docker output when printing to a terminal.
+function docker {
+    $real = Get-Command docker -CommandType Application | Select-Object -First 1
+    if ([Console]::IsOutputRedirected) { & $real @args } else { dvt docker @args }
+}
+"""
+
+SCRIPTS = {"bash": POSIX, "zsh": POSIX, "sh": POSIX, "fish": FISH,
+           "powershell": POWERSHELL, "pwsh": POWERSHELL}
 
 USAGE = """\
 Add one of these to your shell's startup file, then open a new terminal:
@@ -34,6 +43,8 @@ Add one of these to your shell's startup file, then open a new terminal:
   bash:  echo 'eval "$(dvt shell-init bash)"' >> ~/.bashrc
   zsh:   echo 'eval "$(dvt shell-init zsh)"' >> ~/.zshrc
   fish:  echo 'dvt shell-init fish | source' >> ~/.config/fish/config.fish
+  PowerShell (Windows):
+         Add-Content $PROFILE 'Invoke-Expression (dvt shell-init powershell | Out-String)'
 """
 
 

@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Dict, Iterable, List, Optional, Sequence, Set
 
 from .. import docker
+from ..formats import fields_template
 from ..ansi import BOLD, DIM, GREEN, paint
 from ..layout import render
 from ..options import Options
@@ -115,7 +116,8 @@ def load_images(argv: Sequence[str]) -> Optional[List[ImageInfo]]:
     Returns None (after printing docker's error) when docker can't be asked.
     """
     base = global_options(argv)
-    fmt = ["--no-trunc", "--format", "{{json .}}"]
+    fmt = ["--no-trunc", "--format",
+           fields_template(["Repository", "Tag", "ID", "CreatedAt", "Size"])]
     tagged = capture(base + ["images"] + fmt)
     if tagged.code != 0:
         sys.stderr.write(tagged.stderr)

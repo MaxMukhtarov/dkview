@@ -95,9 +95,9 @@ def test_clean_yes_removes_only_planned_images(fake_docker):
     removed = [call[1] for call in fake_docker.calls() if call[0] == "rmi"]
     assert removed, result.stdout
     used = {line.split(":")[-1][:12] for line in
-            (FIXTURES / "container_images.txt").read_text().split()}
+            (FIXTURES / "container_images.txt").read_text(encoding="utf-8").split()}
     tags = {}
-    for line in (FIXTURES / "images.jsonl").read_text().splitlines():
+    for line in (FIXTURES / "images.jsonl").read_text(encoding="utf-8").splitlines():
         item = json.loads(line)
         tags[f"{item['Repository']}:{item['Tag']}"] = item["ID"].split(":")[-1][:12]
     for ref in removed:

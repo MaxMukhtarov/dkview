@@ -1,6 +1,7 @@
 """dvt errors: counting and grouping errors and warnings from logs."""
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -15,7 +16,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 
 def _jsonl(name):
-    return [json.loads(line) for line in (FIXTURES / name).read_text().splitlines()]
+    return [json.loads(line) for line in (FIXTURES / name).read_text(encoding="utf-8").splitlines()]
 
 
 @pytest.mark.parametrize("text, seconds", [
@@ -156,6 +157,7 @@ def test_errors_clean_target_exits_zero(fake_docker):
     assert "none in 1 source" in result.stdout
 
 
+@pytest.mark.skipif(os.name == "nt", reason="uses sh")
 def test_logs_that_never_finish_are_cut_off():
     """`docker service logs` can print everything and then hang."""
     import time
@@ -168,6 +170,7 @@ def test_logs_that_never_finish_are_cut_off():
     assert "stopped sending logs" in source.problem
 
 
+@pytest.mark.skipif(os.name == "nt", reason="uses sh")
 def test_slow_first_line_is_waited_for():
     source = errors.Source("api", "service", [
         "sh", "-c", "sleep 1; echo '2026-10-07T18:00:01.0Z ERROR boom'"])

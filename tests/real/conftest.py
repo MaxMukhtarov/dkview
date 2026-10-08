@@ -4,6 +4,9 @@ They are skipped unless REAL_DOCKER=1 is set, because they create a swarm,
 services, a stack and containers (all named rt_*) and remove them again.
 Needed images: busybox:latest (load it beforehand on machines without
 internet).
+
+DVT_ENGINE=podman runs them against Podman instead; the swarm parts
+(services, stacks, nodes) are skipped there.
 """
 
 import json
@@ -16,6 +19,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
+ENGINE = os.environ.get("DVT_ENGINE") or "docker"
+PODMAN = Path(ENGINE).name.startswith("podman")
 sys.path.insert(0, str(ROOT / "src"))
 
 COMPOSE = """\
@@ -33,7 +38,7 @@ services:
 
 
 def docker(*args, check=True):
-    result = subprocess.run(["docker", *args], capture_output=True, text=True)
+    result = subprocess.run([ENGINE, *args], capture_output=True, text=True)
     if check and result.returncode != 0:
         raise RuntimeError(f"docker {' '.join(args)}: {result.stderr.strip()}")
     return result
@@ -49,9 +54,11 @@ def wait_for(condition, timeout=60, what="docker"):
 
 
 def cleanup():
-    docker("stack", "rm", "rt", check=False)
-    docker("service", "rm", "rt_broken", check=False)
+    if not PODMAN:
+        docker("stack", "rm", "rt", check=False)
+        docker("service", "rm", "rt_broken", check=False)
     docker("rm", "-f", "rt_web", "rt_done", check=False)
+    docker("volume", "rm", "rt_data", check=False)
     wait_for(lambda: not docker("ps", "-aq", "--filter", "name=rt_", check=False).stdout.strip(),
              what="old rt_* containers to go away")
 
@@ -61,9 +68,19 @@ def host(tmp_path_factory):
     if os.environ.get("REAL_DOCKER") != "1":
         pytest.skip("set REAL_DOCKER=1 to run tests against a real docker daemon")
     info = json.loads(docker("info", "--format", "{{json .}}").stdout)
+    if PODMAN:
+        cleanup()
+        docker("volume", "create", "rt_data")
+        docker("run", "-d", "--name", "rt_web", "--label", "team=transfers", "busybox:latest",
+               "sh", "-c", "echo 'fail: Web[0] System.InvalidOperationException: no'; sleep 100000")
+        docker("run", "--name", "rt_done", "busybox:latest", "sh", "-c", "echo bye")
+        yield "podman " + info["version"]["Version"]
+        cleanup()
+        return
     if info["Swarm"]["LocalNodeState"] != "active":
         docker("swarm", "init", "--advertise-addr", "127.0.0.1")
     cleanup()
+    docker("volume", "create", "rt_data")
 
     compose = tmp_path_factory.mktemp("stack") / "stack.yml"
     compose.write_text(COMPOSE)

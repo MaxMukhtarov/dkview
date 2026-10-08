@@ -19,9 +19,10 @@ $ dvt service ls
 ```
 
 * Repository: https://github.com/MaxMukhtarov/pprint-docker (branch `feature`)
-* Version: 3.0.0b1 (until 2.4.1 this tool was called **pprint**; see
+* Version: 3.0.0b2 (until 2.4.1 this tool was called **pprint**; see
   [Switching from pprint](#switching-from-pprint))
-* Needs: Python 3.7 or newer and Docker 20.10 or newer. No other packages, no internet.
+* Needs: Python 3.7 or newer, and Docker 20.10 or newer or Podman 4 or newer. No other
+  packages, no internet. Works on Linux, macOS and Windows (Docker Desktop).
 
 ---
 
@@ -122,13 +123,43 @@ make zipapp                      # builds dist/dvt
 directly. Copy it anywhere, `chmod +x` it, and run it. You can't read the
 code inside it, but `unzip -l dist/dvt` lists what it contains.
 
+### Podman
+
+dvt works with Podman the same way. If `docker` isn't installed and
+`podman` is, dvt uses podman by itself. To choose explicitly, set
+`DVT_ENGINE` or name the program:
+
+```sh
+export DVT_ENGINE=podman          # every dvt command uses podman
+dvt podman ps                     # just this once
+```
+
+Everything works except what needs Docker Swarm, which Podman doesn't
+have: `service`, `stack` and `node` commands, and `dvt doctor` (it says so
+and exits). `dvt errors` reads container logs as usual.
+
+### Docker Desktop (macOS and Windows)
+
+Install Python 3.7 or newer, then use method B or C above. On Windows, run
+the commands in PowerShell, and use `py -m pip install --user .` if
+`python3` isn't found. Then:
+
+```sh
+dvt ps
+```
+
+Colors work in Windows Terminal and the Windows 10+ console. Where the
+output can't show box lines and symbols (an old console, or output saved
+to a file with a legacy code page), dvt draws them with `+ - |` instead.
+To make plain `docker` use dvt in PowerShell, see section 7.
+
 ---
 
 ## 2. Check that it works
 
 ```sh
 type dvt            # should point to ~/bin/dvt (or your chosen path)
-dvt --version       # dvt 3.0.0b1
+dvt --version       # dvt 3.0.0b2
 dvt ps              # your containers as a table
 ```
 
@@ -703,6 +734,11 @@ echo 'eval "$(dvt shell-init zsh)"' >> ~/.zshrc
 echo 'dvt shell-init fish | source' >> ~/.config/fish/config.fish
 ```
 
+```powershell
+# PowerShell (Windows)
+Add-Content $PROFILE 'Invoke-Expression (dvt shell-init powershell | Out-String)'
+```
+
 Then open a new terminal. This defines a small `docker` shell function:
 
 * In your terminal, `docker ps` goes through dvt.
@@ -722,6 +758,9 @@ They're applied before the ones you type:
 ```sh
 echo 'export DVT_OPTS="--short"' >> ~/.bashrc
 ```
+
+`DVT_ENGINE` chooses the program dvt runs: `docker` (the default when it's
+installed), `podman`, or a full path to either.
 
 ---
 
@@ -896,7 +935,7 @@ It's short to type and doesn't collide with the `pprint` module that comes
 with Python, which the old name did.
 
 **Does it need internet?**
-No. It only needs Python 3.7+ and the docker CLI.
+No. It only needs Python 3.7+ and the docker (or podman) CLI.
 
 ---
 
@@ -913,6 +952,7 @@ dvt/
 │   ├── __main__.py         `python3 -m dvt` starts here
 │   ├── cli.py              options and dispatch to the right feature
 │   ├── docker.py           which docker command is it; flags to add
+│   ├── engine.py           docker or podman: which program to run
 │   ├── table.py            Table model; parsing column-aligned output
 │   ├── formats.py          reading list commands as JSON (with text fallback)
 │   ├── layout.py           column widths, wrapping, drawing the box
@@ -989,9 +1029,13 @@ It creates a swarm if the machine isn't in one, plus a stack, services
 and containers named `rt_*`, and removes them afterwards. Run it on a test
 machine, not on a production node.
 
-Tested with Docker 20.10, 24, 27 and 29, and Python 3.7 to 3.13. GitHub
-Actions (`.github/workflows/tests.yml`) runs the unit tests on each Python
-version and `tests/real` against each Docker version, on every push.
+For Podman, run it with `DVT_ENGINE=podman make test-real`; the swarm
+parts are skipped.
+
+Tested with Docker 20.10, 24, 27 and 29, Podman 4.9, and Python 3.7 to
+3.13. GitHub Actions (`.github/workflows/tests.yml`) runs on every push:
+the unit tests on each Python version and on macOS and Windows, and
+`tests/real` against each Docker version and against Podman.
 
 ### Build
 

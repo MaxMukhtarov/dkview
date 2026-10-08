@@ -54,6 +54,8 @@ def json_template(args, words) -> Optional[int]:
         return None
     words = [w for w in words if w != template]
     name = JSON_TABLES.get(tuple(words[:1])) or JSON_TABLES.get(tuple(words[:2]))
+    if name == "images_table.jsonl" and "CreatedAt" in template:  # image data, not a table
+        name = "images_dangling.jsonl" if "dangling=true" in args else "images.jsonl"
     if name is None:
         return None
     fields = re.findall(r"\{\{json \.(\w+)\}\}", template)

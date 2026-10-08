@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict, List, Optional
 
 from ..ansi import BOLD, DIM, GREEN, RED, YELLOW, paint, terminal_width
+from .. import engine
 from ..formats import fields_template
 from ..layout import render
 from ..options import Options
@@ -34,27 +35,36 @@ def _json_lines(argv: List[str]) -> Optional[List[Dict[str, Any]]]:
 
 def collect() -> Dict[str, Any]:
     """Ask docker for everything at once; `stats` alone takes ~2 seconds."""
+    program = engine.name()
     commands = {
-        "info": ["docker", "info", "--format", "{{json .}}"],
-        "ps": ["docker", "ps", "-a", "--format",
+        "info": [program, "info", "--format", "{{json .}}"],
+        "ps": [program, "ps", "-a", "--format",
                fields_template(["ID", "Names", "Image", "State", "Status", "Ports"])],
-        "stats": ["docker", "stats", "--no-stream", "--format", "{{json .}}"],
-        "services": ["docker", "service", "ls", "--format", "{{json .}}"],
-        "df": ["docker", "system", "df", "--format", "{{json .}}"],
+        "stats": [program, "stats", "--no-stream", "--format",
+                  fields_template(["ID", "CPUPerc", "MemUsage"])],
+        "df": [program, "system", "df", "--format", "{{json .}}"],
     }
+    if not engine.is_podman([program]):  # podman has no swarm
+        commands["services"] = [program, "service", "ls", "--format", "{{json .}}"]
     with ThreadPoolExecutor(len(commands)) as pool:
         futures = {k: pool.submit(_json_lines, v) for k, v in commands.items()}
         data = {k: f.result() for k, f in futures.items()}
     if data["ps"] is None:  # docker too old for .State in a template
-        data["ps"] = _json_lines(["docker", "ps", "-a", "--format", "{{json .}}"])
+        data["ps"] = _json_lines([program, "ps", "-a", "--format", "{{json .}}"])
+    data.setdefault("services", None)
     return data
 
 
 def _header(info: Dict[str, Any]) -> str:
+    if "host" in info and "version" in info:  # podman's layout
+        host = info.get("host") or {}
+        info = {"ServerVersion": (info.get("version") or {}).get("Version", "?"),
+                "Name": host.get("hostname", "?"), "NCPU": host.get("cpus", "?"),
+                "MemTotal": host.get("memTotal") or 0, "Engine": "Podman"}
     swarm = (info.get("Swarm") or {}).get("LocalNodeState", "")
     mem = info.get("MemTotal") or 0
     parts = [
-        f"Docker {info.get('ServerVersion', '?')} on {info.get('Name', '?')}",
+        f"{info.get('Engine', 'Docker')} {info.get('ServerVersion', '?')} on {info.get('Name', '?')}",
         f"{info.get('NCPU', '?')} CPUs",
         f"{mem / 1024 ** 3:.1f}GiB RAM" if mem else "",
         f"swarm {swarm}" if swarm and swarm != "inactive" else "",
@@ -96,7 +106,7 @@ def frame(opts: Options, width: Optional[int] = None) -> str:
     width = width or opts.width or terminal_width()
     data = collect()
     if data["ps"] is None:
-        return paint("Cannot reach the docker daemon. Is it running?", RED) + "\n"
+        return paint(f"Cannot reach {engine.name()}. Is it running?", RED) + "\n"
 
     info = (data["info"] or [{}])[0]
     ps = data["ps"]
@@ -143,7 +153,7 @@ def frame(opts: Options, width: Optional[int] = None) -> str:
     if data["df"]:
         table = Table(["TYPE", "TOTAL", "ACTIVE", "SIZE", "RECLAIMABLE"])
         for d in data["df"]:
-            table.rows.append([d.get("Type", ""), str(d.get("TotalCount", "")),
+            table.rows.append([d.get("Type", ""), str(d.get("TotalCount", d.get("Total", ""))),
                                str(d.get("Active", "")), d.get("Size", ""),
                                d.get("Reclaimable", "")])
         out += ["", paint("Disk", BOLD), render(table, width, styler)]

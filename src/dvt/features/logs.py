@@ -89,6 +89,7 @@ def run(argv: Sequence[str], opts: Options) -> int:
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,  # containers often log to stderr
             text=True,
+            encoding="utf-8",
             errors="replace",
             bufsize=1,
         )
