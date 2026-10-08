@@ -19,8 +19,8 @@ $ pprint service ls
 ```
 
 * Repository: https://github.com/MaxMukhtarov/pprint-docker (branch `feature`)
-* Version: 2.4.0
-* Needs: Python 3.7 or newer and the docker CLI. No other packages, no internet.
+* Version: 2.4.1
+* Needs: Python 3.7 or newer and Docker 20.10 or newer. No other packages, no internet.
 
 ---
 
@@ -126,7 +126,7 @@ code inside it, but `unzip -l dist/pprint` lists what it contains.
 
 ```sh
 type pprint            # should point to ~/bin/pprint (or your chosen path)
-pprint --version       # pprint 2.4.0
+pprint --version       # pprint 2.4.1
 pprint ps              # your containers as a table
 ```
 
@@ -904,9 +904,12 @@ pprint/
 │       ├── doctor.py       pprint doctor
 │       ├── errors.py       pprint errors
 │       └── shell.py        pprint shell-init
+├── .github/workflows/
+│   └── tests.yml           CI: unit tests per Python, real tests per Docker
 └── tests/
     ├── fixtures/           real docker output recorded for the tests
     ├── fake_docker.py      stand-in docker used by the end-to-end tests
+    ├── real/               tests against a real docker daemon (REAL_DOCKER=1)
     └── test_*.py
 ```
 
@@ -942,6 +945,24 @@ make test                          # or: PYTHONPATH=src python3 -m pytest -q
 
 The tests use recorded docker output and a fake `docker`, so they run
 without a docker daemon.
+
+`tests/real` runs the whole tool against a real docker daemon instead. It
+checks that every table read as JSON matches docker's own text output, and
+that every command (tables, stats, inspect, logs, dash, doctor, errors,
+clean) works end to end:
+
+```sh
+docker pull busybox:latest          # once; or `docker load` it offline
+make test-real                      # or: REAL_DOCKER=1 python3 -m pytest -v tests/real
+```
+
+It creates a swarm if the machine isn't in one, plus a stack, services
+and containers named `rt_*`, and removes them afterwards. Run it on a test
+machine, not on a production node.
+
+Tested with Docker 20.10, 24, 27 and 29, and Python 3.7 to 3.13. GitHub
+Actions (`.github/workflows/tests.yml`) runs the unit tests on each Python
+version and `tests/real` against each Docker version, on every push.
 
 ### Build
 

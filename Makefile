@@ -1,9 +1,14 @@
 PYTHON ?= python3
 
-.PHONY: test build zipapp install clean
+.PHONY: test test-real build zipapp install clean
 
 test:
 	PYTHONPATH=src $(PYTHON) -m pytest -q
+
+# Against the real docker daemon: creates a swarm (if needed), a stack, services
+# and containers named rt_*, and removes them afterwards. Needs busybox:latest.
+test-real:
+	REAL_DOCKER=1 PYTHONPATH=src $(PYTHON) -m pytest -v tests/real
 
 # Wheel and sdist in dist/, for `pip install`.
 build:
