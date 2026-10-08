@@ -14,16 +14,16 @@ test-real:
 build:
 	$(PYTHON) -m build
 
-# One executable file, dist/pprint, that needs nothing but python3.
+# One executable file, dist/dvt, that needs nothing but python3.
 # Copy it to a server and run it; no pip required.
 zipapp:
 	rm -rf build/zipapp && mkdir -p build/zipapp dist
-	cp -r src/pprint_docker build/zipapp/
+	cp -r src/dvt build/zipapp/
 	find build/zipapp -name __pycache__ -prune -exec rm -rf {} +
-	$(PYTHON) -m zipapp build/zipapp -m "pprint_docker.cli:main" \
-		-p "/usr/bin/env python3" -c -o dist/pprint
-	chmod +x dist/pprint
-	@echo "built dist/pprint"
+	$(PYTHON) -m zipapp build/zipapp -m "dvt.cli:main" \
+		-p "/usr/bin/env python3" -c -o dist/dvt
+	chmod +x dist/dvt
+	@echo "built dist/dvt"
 
 install:
 	$(PYTHON) -m pip install --user .

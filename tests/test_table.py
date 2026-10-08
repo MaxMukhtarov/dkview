@@ -1,4 +1,4 @@
-from pprint_docker.table import parse, parse_aligned
+from dvt.table import parse, parse_aligned
 
 
 def test_empty_ports_cell_stays_in_its_column(fixture_lines):

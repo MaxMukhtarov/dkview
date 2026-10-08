@@ -11,11 +11,11 @@ import time
 
 import pytest
 
-from pprint_docker import docker as docker_cli
-from pprint_docker import formats
-from pprint_docker.features import tables
-from pprint_docker.runner import capture
-from pprint_docker.table import parse
+from dvt import docker as docker_cli
+from dvt import formats
+from dvt.features import tables
+from dvt.runner import capture
+from dvt.table import parse
 
 from .conftest import ROOT
 
@@ -65,8 +65,8 @@ def test_every_layout_is_covered():
 
 def run(*args, timeout=60):
     return subprocess.run(
-        [sys.executable, "-m", "pprint_docker", "--no-color", "--width", "120", *args],
-        capture_output=True, text=True, timeout=timeout, cwd=ROOT,
+        [sys.executable, "-m", "dvt", "--no-color", "--width", "120", *args],
+        capture_output=True, text=True, timeout=timeout,
         env={**__import__("os").environ, "PYTHONPATH": str(ROOT / "src")},
     )
 

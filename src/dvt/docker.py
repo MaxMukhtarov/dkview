@@ -45,7 +45,7 @@ INSPECT_OBJECTS = {"container", "image", "service", "network", "volume",
 
 LOG_OBJECTS = {"container", "service", "compose"}
 
-# Every top-level docker command, so `pprint ps` can mean `docker ps`.
+# Every top-level docker command, so `dvt ps` can mean `docker ps`.
 DOCKER_COMMANDS = {
     "attach", "build", "builder", "buildx", "commit", "compose", "config",
     "container", "context", "cp", "create", "diff", "events", "exec",
@@ -63,7 +63,7 @@ def is_docker(argv: Sequence[str]) -> bool:
 
 
 def expand_shortcut(argv: List[str]) -> List[str]:
-    """`pprint ps -a` -> `docker ps -a`."""
+    """`dvt ps -a` -> `docker ps -a`."""
     if argv and argv[0] in DOCKER_COMMANDS:
         return ["docker"] + argv
     return argv
@@ -100,7 +100,7 @@ def user_chose_format(argv: Sequence[str]) -> bool:
 
 @dataclass
 class Kind:
-    """What pprint should do with a docker command."""
+    """What dvt should do with a docker command."""
 
     name: str  # "table", "stats", "logs", "inspect" or "passthrough"
 
@@ -154,7 +154,7 @@ def _is_table_format(argv: Sequence[str]) -> bool:
     return False
 
 
-# Commands that accept --no-trunc. pprint asks for full values and wraps
+# Commands that accept --no-trunc. dvt asks for full values and wraps
 # them itself, then shortens IDs back to docker's usual 12 characters.
 NO_TRUNC = {
     ("ps",), ("images",), ("history",), ("search",),
@@ -179,7 +179,7 @@ def prepare(argv: Sequence[str], trunc: bool) -> List[str]:
     if kind.name == "stats" and "--no-stream" not in argv:
         argv.append("--no-stream")
 
-    # Full values so COMMAND or ERROR are not cut short; pprint wraps
+    # Full values so COMMAND or ERROR are not cut short; dvt wraps
     # long values itself.
     if (kind.name == "table" and supports_no_trunc(argv) and not trunc
             and not has_option(argv, "--no-trunc", "--format", "-q", "--quiet")):

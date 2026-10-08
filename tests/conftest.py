@@ -13,6 +13,13 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 sys.path.insert(0, str(ROOT / "src"))
 
 
+@pytest.fixture(autouse=True)
+def _run_outside_the_project(tmp_path, monkeypatch):
+    """Child processes start in a temp folder, not in the project folder,
+    which may sit on a network mount where `sh` can fail to read its cwd."""
+    monkeypatch.chdir(tmp_path)
+
+
 @pytest.fixture
 def fixture_lines():
     def read(name):
@@ -22,7 +29,7 @@ def fixture_lines():
 
 @pytest.fixture
 def fake_docker(tmp_path):
-    """Put a fake `docker` first on PATH; returns a helper to run pprint."""
+    """Put a fake `docker` first on PATH; returns a helper to run dvt."""
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
     docker = bin_dir / "docker"
@@ -36,12 +43,12 @@ def fake_docker(tmp_path):
     env["PATH"] = f"{bin_dir}{os.pathsep}{env['PATH']}"
     env["PYTHONPATH"] = str(ROOT / "src")
     env["FAKE_DOCKER_LOG"] = str(log)
-    env.pop("PPRINT_OPTS", None)
+    env.pop("DVT_OPTS", None)
 
     class Runner:
         def run(self, *args, timeout=10, **kw):
             return subprocess.run(
-                [sys.executable, "-m", "pprint_docker", "--no-color", "--width", "120", *args],
+                [sys.executable, "-m", "dvt", "--no-color", "--width", "120", *args],
                 env={**env, **kw.pop("env", {})}, capture_output=True, text=True,
                 timeout=timeout, **kw,
             )

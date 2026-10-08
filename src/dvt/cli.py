@@ -17,34 +17,34 @@ from .runner import passthrough
 
 EPILOG = """\
 examples:
-  pprint docker ps                 formatted, colored table
-  pprint ps -a                     same; "docker" can be left out
-  pprint --short --cols name,status,image ps
-  pprint --sort cpu --desc stats   live stats, busiest first (Ctrl+C quits)
-  pprint --watch service ls        redraw every 2 seconds
-  pprint inspect web               short summary; add --full for every field
-  pprint --grep timeout logs -f api
-  pprint dash                      overview of the whole host (--watch for live)
-  pprint images --group            one row per repository with total sizes
-  pprint clean --dry-run           old unused image tags that would be removed
-  pprint clean --keep 5            remove them, keeping the newest 5 per repository
-  pprint doctor                    failing swarm services with the real error
-  pprint errors                    errors and warnings in all logs, last 30 minutes
-  pprint errors transfers --since 2d   one stack, service or container
-  pprint shell-init                make plain "docker ps" use pprint
+  dvt docker ps                 formatted, colored table
+  dvt ps -a                     same; "docker" can be left out
+  dvt --short --cols name,status,image ps
+  dvt --sort cpu --desc stats   live stats, busiest first (Ctrl+C quits)
+  dvt --watch service ls        redraw every 2 seconds
+  dvt inspect web               short summary; add --full for every field
+  dvt --grep timeout logs -f api
+  dvt dash                      overview of the whole host (--watch for live)
+  dvt images --group            one row per repository with total sizes
+  dvt clean --dry-run           old unused image tags that would be removed
+  dvt clean --keep 5            remove them, keeping the newest 5 per repository
+  dvt doctor                    failing swarm services with the real error
+  dvt errors                    errors and warnings in all logs, last 30 minutes
+  dvt errors transfers --since 2d   one stack, service or container
+  dvt shell-init                make plain "docker ps" use dvt
 
-pprint's own options go before the command. Default options can be set in
-the PPRINT_OPTS environment variable, e.g. PPRINT_OPTS="--short".
+dvt's own options go before the command. Default options can be set in
+the DVT_OPTS environment variable, e.g. DVT_OPTS="--short".
 """
 
 
-# Commands that are pprint's own rather than docker's.
+# Commands that are dvt's own rather than docker's.
 OWN_COMMANDS = {"dash", "clean", "doctor", "errors", "shell-init"}
 
 
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
-        prog="pprint",
+        prog="dvt",
         description="Readable, colored output for docker commands.",
         epilog=EPILOG,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -78,7 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
     mode.add_argument("--group", action="store_true",
                       help="images: one row per repository with total and unused size")
 
-    cleaning = p.add_argument_group("pprint clean")
+    cleaning = p.add_argument_group("dvt clean")
     cleaning.add_argument("--keep", type=int, default=3, metavar="N",
                        help="keep the newest N tags of each repository (default: 3)")
     cleaning.add_argument("--dry-run", action="store_true",
@@ -86,7 +86,7 @@ def build_parser() -> argparse.ArgumentParser:
     cleaning.add_argument("-y", "--yes", action="store_true",
                        help="delete without asking")
 
-    logs_group = p.add_argument_group("pprint errors")
+    logs_group = p.add_argument_group("dvt errors")
     logs_group.add_argument("--since", metavar="TIME",
                             help="how far back to read logs: 30m, 6h, 2d, 1w or a date "
                                  f"(default: {errors.DEFAULT_SINCE})")
@@ -95,7 +95,7 @@ def build_parser() -> argparse.ArgumentParser:
     out.add_argument("--no-color", action="store_true", help="disable colors")
     out.add_argument("--color", action="store_true",
                      help="force colors even when not printing to a terminal")
-    out.add_argument("-V", "--version", action="version", version=f"pprint {__version__}")
+    out.add_argument("-V", "--version", action="version", version=f"dvt {__version__}")
 
     p.add_argument("command", nargs=argparse.REMAINDER, help="the command to run")
     return p
@@ -125,7 +125,7 @@ def to_options(args: argparse.Namespace) -> Options:
 
 def run(argv: Sequence[str]) -> int:
     parser = build_parser()
-    args = parser.parse_args(shlex.split(os.environ.get("PPRINT_OPTS", "")) + list(argv))
+    args = parser.parse_args(shlex.split(os.environ.get("DVT_OPTS", "")) + list(argv))
 
     if args.no_color:
         colors.enabled = False
@@ -148,7 +148,7 @@ def run(argv: Sequence[str]) -> int:
         return run_errors(parser, command[1:], opts)
 
     if command[0] in OWN_COMMANDS and len(command) > 1 and command[0] != "shell-init":
-        # `pprint clean --keep 5`: options after pprint's own commands are pprint's.
+        # `dvt clean --keep 5`: options after dvt's own commands are dvt's.
         before = list(argv)[:len(argv) - len(args.command)]
         return run(before + command[1:] + [command[0]])
 
@@ -159,7 +159,7 @@ def run(argv: Sequence[str]) -> int:
     if command[0] == "dash":
         frame = lambda width: dashboard.frame(opts, width)  # noqa: E731
         if opts.watch:
-            return live.run(frame, "pprint dash", opts.interval)
+            return live.run(frame, "dvt dash", opts.interval)
         sys.stdout.write(frame(opts.width))
         return 0
 
@@ -196,8 +196,8 @@ def run(argv: Sequence[str]) -> int:
 
 
 def run_errors(parser: argparse.ArgumentParser, rest: List[str], opts: Options) -> int:
-    """`pprint errors [TARGET...]`: targets and options can be mixed freely."""
-    sub = argparse.ArgumentParser(prog="pprint errors", description=errors.__doc__,
+    """`dvt errors [TARGET...]`: targets and options can be mixed freely."""
+    sub = argparse.ArgumentParser(prog="dvt errors", description=errors.__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
     sub.add_argument("targets", nargs="*", metavar="NAME",
                      help="stack, service or container name or ID (default: everything)")
@@ -238,7 +238,7 @@ def shell_init(rest: List[str]) -> int:
         sys.stdout.write(shell.USAGE)
         return 0
     if name not in shell.SCRIPTS:
-        sys.stderr.write(f"pprint: unsupported shell '{name}' (bash, zsh, fish)\n")
+        sys.stderr.write(f"dvt: unsupported shell '{name}' (bash, zsh, fish)\n")
         return 2
     sys.stdout.write(shell.script(name))
     return 0

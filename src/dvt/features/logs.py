@@ -109,6 +109,6 @@ def run(argv: Sequence[str], opts: Options) -> int:
         process.terminate()
         return 130
     except BrokenPipeError:
-        # `pprint docker logs web | head` closed the pipe early.
+        # `dvt docker logs web | head` closed the pipe early.
         process.terminate()
         return 0

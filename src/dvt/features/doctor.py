@@ -1,4 +1,4 @@
-"""`pprint doctor`: what is wrong with each swarm service, and why."""
+"""`dvt doctor`: what is wrong with each swarm service, and why."""
 
 from __future__ import annotations
 
@@ -99,7 +99,7 @@ def collect(argv: Sequence[str]) -> Optional[List[ServiceReport]]:
     if listing.code != 0:
         message = listing.stderr.strip()
         if "not a swarm manager" in message or "swarm" in message.lower():
-            sys.stderr.write("pprint doctor: this node is not a swarm manager, "
+            sys.stderr.write("dvt doctor: this node is not a swarm manager, "
                              "so there are no services to check.\n")
         else:
             sys.stderr.write(listing.stderr)
@@ -137,10 +137,10 @@ _HINTS = [
      "node can log in to the registry (deploy with --with-registry-auth)."),
     (r"non-zero exit \(137\)",
      "The container was killed (exit 137): usually out of memory or a failed "
-     "health check. Check memory limits and `pprint errors {name}`."),
+     "health check. Check memory limits and `dvt errors {name}`."),
     (r"non-zero exit \((\d+)\)",
      "The program inside the container exited with an error. "
-     "See why with `pprint errors {name}`."),
+     "See why with `dvt errors {name}`."),
     (r"no suitable node",
      "No node matches the service's placement constraints or resources. "
      "Check constraints, labels and reserved CPU/memory."),
@@ -150,7 +150,7 @@ _HINTS = [
      "A volume or bind mount source doesn't exist on the node."),
     (r"unhealthy container|health check",
      "The container's health check keeps failing. "
-     "Check `pprint inspect` on a task container and the service logs."),
+     "Check `dvt inspect` on a task container and the service logs."),
 ]
 
 

@@ -1,15 +1,17 @@
-"""`pprint errors`: errors and warnings from logs, counted and grouped.
+"""`dvt errors`: errors and warnings from logs, counted and grouped.
 
-    pprint errors                      every service and container on the host
-    pprint errors transfers --since 2d one stack, a service or a container
+    dvt errors                      every service and container on the host
+    dvt errors transfers --since 2d one stack, a service or a container
 """
 
 from __future__ import annotations
 
 import json
+import queue
 import re
 import subprocess
 import sys
+import threading
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
@@ -169,7 +171,16 @@ class Source:
             group.first = when
 
 
-def read(source: Source, grep: Optional["re.Pattern[str]"] = None) -> Source:
+# `docker service logs` sometimes prints everything and then never exits
+# (a swarm bug with tasks whose containers are gone). When no line has
+# arrived for this long, what came so far is counted and docker is stopped.
+# The first line may take longer: docker reads old log files to find --since.
+IDLE_SECONDS = 8.0
+FIRST_LINE_SECONDS = 30.0
+
+
+def read(source: Source, grep: Optional["re.Pattern[str]"] = None,
+         idle: float = IDLE_SECONDS, first: float = FIRST_LINE_SECONDS) -> Source:
     """Stream the logs (they can be large) and count them line by line."""
     try:
         process = subprocess.Popen(
@@ -180,7 +191,28 @@ def read(source: Source, grep: Optional["re.Pattern[str]"] = None) -> Source:
         source.problem = f"{source.command[0]}: command not found"
         return source
     assert process.stdout is not None
-    for line in process.stdout:
+
+    lines: "queue.Queue[Optional[str]]" = queue.Queue(maxsize=10000)
+
+    def pump() -> None:
+        assert process.stdout is not None
+        for line in process.stdout:
+            lines.put(line)
+        lines.put(None)
+
+    threading.Thread(target=pump, daemon=True).start()
+    wait = first
+    while True:
+        try:
+            line = lines.get(timeout=wait)
+        except queue.Empty:
+            process.kill()
+            source.problem = (f"docker stopped sending logs for {wait:.0f}s without "
+                              "finishing; counted what had arrived")
+            break
+        wait = idle
+        if line is None:
+            break
         source.add(line.rstrip("\n"), grep)
     process.wait()
     return source
@@ -390,7 +422,7 @@ def run(argv: Sequence[str], targets: Sequence[str], opts: Options) -> int:
     base = global_options(argv)
     since = opts.since or DEFAULT_SINCE
     if parse_since(since) is None and not re.match(r"\d{4}-\d\d-\d\d", since):
-        sys.stderr.write(f"pprint errors: --since {since}: use a duration like 30m, 6h, 2d "
+        sys.stderr.write(f"dvt errors: --since {since}: use a duration like 30m, 6h, 2d "
                          "or 1w, or a date like 2026-10-07T09:00\n")
         return 2
     docker_since = since_for_docker(since)
@@ -399,7 +431,7 @@ def run(argv: Sequence[str], targets: Sequence[str], opts: Options) -> int:
     if targets:
         sources, missing = resolve(host, base, targets, docker_since)
         for name in missing:
-            sys.stderr.write(f"pprint errors: no stack, service or container called {name}\n")
+            sys.stderr.write(f"dvt errors: no stack, service or container called {name}\n")
         if missing and not sources:
             return 2
     else:

@@ -329,5 +329,5 @@ def run(argv: Sequence[str], opts: Options) -> int:
 
     sys.stdout.write(("\n\n" + paint("─" * 40, DIM) + "\n\n").join(blocks) + "\n")
     if not opts.full and any(isinstance(o, dict) and kind_of(o) for o in data):
-        sys.stdout.write(paint("\n(summary; use pprint --full for every field)\n", DIM))
+        sys.stdout.write(paint("\n(summary; use dvt --full for every field)\n", DIM))
     return result.code

@@ -39,7 +39,7 @@ def build(argv: Sequence[str], opts: Options) -> Tuple[int, str, str]:
         table, marked = reshape(table, opts, used,
                                 added_no_trunc="--no-trunc" in prepared[len(argv):])
     except ColumnError as error:
-        return 2, "", f"pprint: {error}\n"
+        return 2, "", f"dvt: {error}\n"
 
     out = render(table, opts.width, styler) + "\n"
     if marked and table.rows:

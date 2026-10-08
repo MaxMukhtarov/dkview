@@ -1,4 +1,4 @@
-"""`pprint dash`: containers, services, problems and disk use on one screen."""
+"""`dvt dash`: containers, services, problems and disk use on one screen."""
 
 from __future__ import annotations
 

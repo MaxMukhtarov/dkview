@@ -1,14 +1,14 @@
-"""`pprint shell-init`: make plain `docker ...` go through pprint."""
+"""`dvt shell-init`: make plain `docker ...` go through dvt."""
 
 from __future__ import annotations
 
 POSIX = """\
-# pprint: format docker output when printing to a terminal.
+# dvt: format docker output when printing to a terminal.
 # Scripts and pipes (docker ps | grep ...) still get docker's raw output.
 # Use `command docker ...` to bypass it once.
 docker() {
     if [ -t 1 ]; then
-        command pprint docker "$@"
+        command dvt docker "$@"
     else
         command docker "$@"
     fi
@@ -16,10 +16,10 @@ docker() {
 """
 
 FISH = """\
-# pprint: format docker output when printing to a terminal.
+# dvt: format docker output when printing to a terminal.
 function docker --wraps docker
     if isatty stdout
-        command pprint docker $argv
+        command dvt docker $argv
     else
         command docker $argv
     end
@@ -31,9 +31,9 @@ SCRIPTS = {"bash": POSIX, "zsh": POSIX, "sh": POSIX, "fish": FISH}
 USAGE = """\
 Add one of these to your shell's startup file, then open a new terminal:
 
-  bash:  echo 'eval "$(pprint shell-init bash)"' >> ~/.bashrc
-  zsh:   echo 'eval "$(pprint shell-init zsh)"' >> ~/.zshrc
-  fish:  echo 'pprint shell-init fish | source' >> ~/.config/fish/config.fish
+  bash:  echo 'eval "$(dvt shell-init bash)"' >> ~/.bashrc
+  zsh:   echo 'eval "$(dvt shell-init zsh)"' >> ~/.zshrc
+  fish:  echo 'dvt shell-init fish | source' >> ~/.config/fish/config.fish
 """
 
 

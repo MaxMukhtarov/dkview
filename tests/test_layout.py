@@ -2,10 +2,10 @@ import re
 
 import pytest
 
-from pprint_docker.ansi import colors, strip
-from pprint_docker.layout import choose_widths, render, wrap_cell
-from pprint_docker.styles import styler
-from pprint_docker.table import Table, parse_aligned
+from dvt.ansi import colors, strip
+from dvt.layout import choose_widths, render, wrap_cell
+from dvt.styles import styler
+from dvt.table import Table, parse_aligned
 
 SAMPLES = [
     "registry.doublewave.uz/doublewave/transfers/api-v2:dev-e55edc11695bf0e572164ed49ea7a640b3a1b434",
@@ -75,7 +75,7 @@ def test_empty_table_says_so():
 
 
 def test_marker_stays_with_the_name_when_wrapping():
-    from pprint_docker.layout import wrap_marked
+    from dvt.layout import wrap_marked
     lines = wrap_marked("○ doublewave/transfers/api-v2", 20)
     assert lines[0].startswith("○ doublewave")
     assert all(line.startswith("  ") for line in lines[1:])

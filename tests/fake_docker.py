@@ -2,7 +2,7 @@
 """Stand-in for the docker CLI, serving recorded output from tests/fixtures.
 
 Every call's arguments are appended to $FAKE_DOCKER_LOG so tests can check
-what pprint actually ran.
+what dvt actually ran.
 """
 
 import json
@@ -57,7 +57,7 @@ def json_template(args, words) -> Optional[int]:
     if name is None:
         return None
     fields = re.findall(r"\{\{json \.(\w+)\}\}", template)
-    # FAKE_OLD_DOCKER: a docker that lacks the fields, so pprint falls back.
+    # FAKE_OLD_DOCKER: a docker that lacks the fields, so dvt falls back.
     old = os.environ.get("FAKE_OLD_DOCKER")
     for line in fixture(name).splitlines():
         item = json.loads(line)

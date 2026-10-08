@@ -1,13 +1,13 @@
-"""pprint clean, pprint doctor and pprint images --group."""
+"""dvt clean, dvt doctor and dvt images --group."""
 
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from pprint_docker.features import doctor
-from pprint_docker.features.clean import DELETE, freed_space, plan
-from pprint_docker.features.images import ImageInfo, group_table
-from pprint_docker.units import human_size, parse_docker_time, parse_size
+from dvt.features import doctor
+from dvt.features.clean import DELETE, freed_space, plan
+from dvt.features.images import ImageInfo, group_table
+from dvt.units import human_size, parse_docker_time, parse_size
 
 FIXTURES = Path(__file__).parent / "fixtures"
 NOW = datetime(2026, 10, 7, 12, 0, tzinfo=timezone.utc)
@@ -143,7 +143,7 @@ def test_task_parsing():
 def test_hints():
     assert "can't be pulled" in doctor.hint('failed to resolve reference "x"', "api")
     assert "exit 137" in doctor.hint("task: non-zero exit (137)", "api")
-    assert "pprint errors api" in doctor.hint("task: non-zero exit (3)", "api")
+    assert "dvt errors api" in doctor.hint("task: non-zero exit (3)", "api")
     assert doctor.hint("something else", "api") == ""
 
 

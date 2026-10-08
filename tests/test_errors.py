@@ -1,4 +1,4 @@
-"""pprint errors: counting and grouping errors and warnings from logs."""
+"""dvt errors: counting and grouping errors and warnings from logs."""
 
 import json
 from datetime import datetime, timezone
@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from pprint_docker.features import errors
-from pprint_docker.options import Options
+from dvt.features import errors
+from dvt.options import Options
 
 ERRORS = {"FAKE_SCENARIO": "errors"}
 NOW = datetime(2026, 10, 7, 18, 30, tzinfo=timezone.utc)
@@ -154,3 +154,22 @@ def test_errors_clean_target_exits_zero(fake_docker):
     result = fake_docker.run("errors", "transfers_worker", env=ERRORS)
     assert result.returncode == 0
     assert "none in 1 source" in result.stdout
+
+
+def test_logs_that_never_finish_are_cut_off():
+    """`docker service logs` can print everything and then hang."""
+    import time
+    source = errors.Source("api", "service", [
+        "sh", "-c", "echo '2026-10-07T18:00:01.0Z ERROR boom'; exec sleep 30"])
+    started = time.time()
+    errors.read(source, idle=0.5, first=5)
+    assert time.time() - started < 4
+    assert source.errors == 1
+    assert "stopped sending logs" in source.problem
+
+
+def test_slow_first_line_is_waited_for():
+    source = errors.Source("api", "service", [
+        "sh", "-c", "sleep 1; echo '2026-10-07T18:00:01.0Z ERROR boom'"])
+    errors.read(source, idle=0.5, first=5)
+    assert source.errors == 1 and source.problem == ""

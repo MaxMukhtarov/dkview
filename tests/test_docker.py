@@ -1,6 +1,6 @@
 import pytest
 
-from pprint_docker.docker import classify, expand_shortcut, prepare, words
+from dvt.docker import classify, expand_shortcut, prepare, words
 
 
 @pytest.mark.parametrize("command, expected", [

@@ -1,7 +1,7 @@
 import pytest
 
-from pprint_docker.ansi import DIM, GREEN, RED, YELLOW
-from pprint_docker.styles import styler
+from dvt.ansi import DIM, GREEN, RED, YELLOW
+from dvt.styles import styler
 
 
 @pytest.mark.parametrize("header, value, color", [

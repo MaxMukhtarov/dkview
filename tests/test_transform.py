@@ -2,8 +2,8 @@ import re
 
 import pytest
 
-from pprint_docker.table import Table
-from pprint_docker.transform import (
+from dvt.table import Table
+from dvt.transform import (
     ColumnError, compact_age, find_column, grep_rows, select_columns,
     short_image, sort_key, sort_rows, tidy,
 )

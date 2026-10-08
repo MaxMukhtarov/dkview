@@ -2,7 +2,7 @@
 
 import pytest
 
-from pprint_docker import formats
+from dvt import formats
 
 OLD = {"FAKE_OLD_DOCKER": "1"}
 

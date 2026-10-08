@@ -1,15 +1,15 @@
-# pprint
+# dvt
 
 **Readable, colored output for docker commands.**
 
-`pprint` runs a docker command for you and turns its output into a clean,
+`dvt` runs a docker command for you and turns its output into a clean,
 width-fitted, colored table. Problems stand out at a glance: unhealthy
 containers are red, services missing replicas are red, busy CPUs are yellow.
 Commands that are not tables (`run`, `exec`, `build`, `logs -f`, typos...)
 behave exactly like plain docker.
 
 ```
-$ pprint service ls
+$ dvt service ls
 ┌──────────────┬────────┬────────────┬──────────┬────────────────────────┬────────────────┐
 │ ID           │ NAME   │ MODE       │ REPLICAS │ IMAGE                  │ PORTS          │
 ├──────────────┼────────┼────────────┼──────────┼────────────────────────┼────────────────┤
@@ -19,7 +19,8 @@ $ pprint service ls
 ```
 
 * Repository: https://github.com/MaxMukhtarov/pprint-docker (branch `feature`)
-* Version: 2.4.1
+* Version: 3.0.0b1 (until 2.4.1 this tool was called **pprint**; see
+  [Switching from pprint](#switching-from-pprint))
 * Needs: Python 3.7 or newer and Docker 20.10 or newer. No other packages, no internet.
 
 ---
@@ -32,7 +33,7 @@ $ pprint service ls
 4. [Commands](#4-commands)
 5. [Options](#5-options)
 6. [Colors](#6-colors)
-7. [Make plain `docker` use pprint](#7-make-plain-docker-use-pprint)
+7. [Make plain `docker` use dvt](#7-make-plain-docker-use-dvt)
 8. [Default options](#8-default-options)
 9. [Update](#9-update)
 10. [Uninstall](#10-uninstall)
@@ -55,21 +56,21 @@ python3 --version        # must be 3.7 or newer
 
 ### A. From the source archive, no internet needed (recommended for servers)
 
-Copy `pprint-source.tar.gz` (or `pprint-source.zip`) to the server, then:
+Copy `dvt-source.tar.gz` (or `dvt-source.zip`) to the server, then:
 
 ```sh
-# 1. Unpack into your home folder. This creates ~/pprint
-tar -xzf pprint-source.tar.gz -C ~
+# 1. Unpack into your home folder. This creates ~/dvt
+tar -xzf dvt-source.tar.gz -C ~
 #   or, for the zip (no unzip command needed):
-#   python3 -m zipfile -e pprint-source.zip ~
+#   python3 -m zipfile -e dvt-source.zip ~
 
-# 2. Create the `pprint` command
+# 2. Create the `dvt` command
 mkdir -p ~/bin
-cat > ~/bin/pprint <<'EOF'
+cat > ~/bin/dvt <<'EOF'
 #!/bin/sh
-PYTHONPATH="$HOME/pprint/src" exec python3 -m pprint_docker "$@"
+PYTHONPATH="$HOME/dvt/src" exec python3 -m dvt "$@"
 EOF
-chmod +x ~/bin/pprint
+chmod +x ~/bin/dvt
 
 # 3. Make sure ~/bin is on your PATH (already true on RHEL/CentOS)
 echo "$PATH" | tr ':' '\n' | grep -qx "$HOME/bin" \
@@ -81,79 +82,78 @@ To install it for **every user** on the machine, unpack it into `/opt`
 and put the command in `/usr/local/bin` instead:
 
 ```sh
-sudo tar -xzf pprint-source.tar.gz -C /opt
-sudo tee /usr/local/bin/pprint >/dev/null <<'EOF'
+sudo tar -xzf dvt-source.tar.gz -C /opt
+sudo tee /usr/local/bin/dvt >/dev/null <<'EOF'
 #!/bin/sh
-PYTHONPATH="/opt/pprint/src" exec python3 -m pprint_docker "$@"
+PYTHONPATH="/opt/dvt/src" exec python3 -m dvt "$@"
 EOF
-sudo chmod +x /usr/local/bin/pprint
+sudo chmod +x /usr/local/bin/dvt
 ```
 
 ### B. From GitHub (machines with access to GitHub)
 
 ```sh
-git clone -b feature https://github.com/MaxMukhtarov/pprint-docker.git ~/pprint
+git clone -b feature https://github.com/MaxMukhtarov/pprint-docker.git ~/dvt
 ```
 
-Then do step 2 of method A to create the `~/bin/pprint` command.
+Then do step 2 of method A to create the `~/bin/dvt` command.
 
 ### C. With pip
 
 ```sh
-cd ~/pprint
+cd ~/dvt
 python3 -m pip install --user .
 ```
 
-This installs two commands into `~/.local/bin`: `pprint` and the short
-alias `dpp`. Make sure `~/.local/bin` is on your PATH.
+This installs the `dvt` command into `~/.local/bin`. Make sure
+`~/.local/bin` is on your PATH. (On PyPI the package is called
+`dvt-docker`, because the name `dvt` belongs to another project.)
 
 ### D. As one single file
 
 On a machine that has `make` and the source:
 
 ```sh
-cd ~/pprint
-make zipapp                      # builds dist/pprint
+cd ~/dvt
+make zipapp                      # builds dist/dvt
 ```
 
-`dist/pprint` is a compressed archive of the code that Python runs
+`dist/dvt` is a compressed archive of the code that Python runs
 directly. Copy it anywhere, `chmod +x` it, and run it. You can't read the
-code inside it, but `unzip -l dist/pprint` lists what it contains.
+code inside it, but `unzip -l dist/dvt` lists what it contains.
 
 ---
 
 ## 2. Check that it works
 
 ```sh
-type pprint            # should point to ~/bin/pprint (or your chosen path)
-pprint --version       # pprint 2.4.1
-pprint ps              # your containers as a table
+type dvt            # should point to ~/bin/dvt (or your chosen path)
+dvt --version       # dvt 3.0.0b1
+dvt ps              # your containers as a table
 ```
 
-If `type pprint` shows an old alias such as
-`alias pprint='python3 ~/pprint.py'`, delete that line from `~/.bashrc`,
-then open a new terminal. Also delete any old `pprint.py` file, because a
-file with that name breaks Python's own `pprint` module.
+If you used **pprint** before, follow
+[Switching from pprint](#switching-from-pprint) to remove the old command.
 
 ---
 
 ## 3. Quick start
 
 ```sh
-pprint ps -a                          # all containers
-pprint service ls                     # swarm services, replicas colored
-pprint stats                          # live CPU/memory view, Ctrl+C to quit
-pprint inspect <container>            # short summary of one container
-pprint logs -f <container>            # colored logs
-pprint dash                           # one-screen overview of the host
-pprint images --group                 # one row per repository, with sizes
-pprint clean --dry-run                # old unused image tags you could remove
-pprint doctor                         # what is wrong with failing services
-pprint errors                         # errors and warnings in all logs, last 30 minutes
-pprint errors transfers --since 2d    # the same for one stack, service or container
+dvt ps -a                          # all containers
+dvt service ls                     # swarm services, replicas colored
+dvt stats                          # live CPU/memory view, Ctrl+C to quit
+dvt inspect <container>            # short summary of one container
+dvt logs -f <container>            # colored logs
+dvt dash                           # one-screen overview of the host
+dvt images --group                 # one row per repository, with sizes
+dvt clean --dry-run                # old unused image tags you could remove
+dvt doctor                         # what is wrong with failing services
+dvt errors                         # errors and warnings in all logs, last 30 minutes
+dvt errors transfers --since 2d    # the same for one stack, service or container
 ```
 
-The word `docker` is optional: `pprint ps -a` and `pprint docker ps -a`
+The word `docker` is optional: `dvt ps -a` and `dvt docker ps -a`
 are the same.
 
 ---
@@ -175,18 +175,18 @@ These docker commands are shown as tables:
 Examples:
 
 ```sh
-pprint ps -a
-pprint ps --filter status=exited
-pprint images
-pprint service ps api
-pprint node ls
-pprint system df
-pprint compose -f docker-compose.prod.yml ps
+dvt ps -a
+dvt ps --filter status=exited
+dvt images
+dvt service ps api
+dvt node ls
+dvt system df
+dvt compose -f docker-compose.prod.yml ps
 ```
 
-What pprint does to tables:
+What dvt does to tables:
 
-* **Nothing is cut off.** For commands that support it, pprint asks
+* **Nothing is cut off.** For commands that support it, dvt asks
   docker for full values (`--no-trunc`) so COMMAND, ERROR and similar
   columns aren't shortened with `…`. Long values wrap inside their cell
   instead, breaking after `/ : - _ .` rather than mid-word.
@@ -206,7 +206,7 @@ What pprint does to tables:
   is printed under the table.
 
   ```
-  $ pprint --short images
+  $ dvt --short images
   ┌────────────────────────────────────┬─────────────────────────────────────┬──────────────┬─────────┬────────┐
   │ REPOSITORY                         │ TAG                                 │ IMAGE ID     │ CREATED │ SIZE   │
   ├────────────────────────────────────┼─────────────────────────────────────┼──────────────┼─────────┼────────┤
@@ -218,12 +218,12 @@ What pprint does to tables:
   ● used by a container   ○ not used
   ```
 
-  To list only the unused ones: `pprint --grep ○ images`.
+  To list only the unused ones: `dvt --grep ○ images`.
 
 Example:
 
 ```
-$ pprint --short --cols name,status,image ps -a
+$ dvt --short --cols name,status,image ps -a
 ┌──────────────────────────────────────────┬───────────────────┬───────────────┐
 │ NAMES                                    │ STATUS            │ IMAGE         │
 ├──────────────────────────────────────────┼───────────────────┼───────────────┤
@@ -236,33 +236,33 @@ $ pprint --short --cols name,status,image ps -a
 ### 4.2 Live stats
 
 ```sh
-pprint stats                      # live view, refreshes every 2 seconds
-pprint --sort cpu --desc stats    # busiest containers at the top
-pprint -n 5 stats                 # refresh every 5 seconds
-pprint --once stats               # print one snapshot and exit
+dvt stats                      # live view, refreshes every 2 seconds
+dvt --sort cpu --desc stats    # busiest containers at the top
+dvt -n 5 stats                 # refresh every 5 seconds
+dvt --once stats               # print one snapshot and exit
 ```
 
-Plain `docker stats` never exits, so pprint takes one sample at a time
+Plain `docker stats` never exits, so dvt takes one sample at a time
 (`--no-stream`) and redraws the screen in place, like `top`. Press
-**Ctrl+C** to quit. When the output goes to a file or a pipe, pprint
+**Ctrl+C** to quit. When the output goes to a file or a pipe, dvt
 prints a single snapshot instead.
 
 ### 4.3 Watch any table
 
 ```sh
-pprint --watch service ls         # watch a deploy roll out
-pprint --watch ps -a
-pprint -w -n 1 service ps api     # every second
+dvt --watch service ls         # watch a deploy roll out
+dvt --watch ps -a
+dvt -w -n 1 service ps api     # every second
 ```
 
 ### 4.4 inspect
 
 ```sh
-pprint inspect web                # summary of a container
-pprint inspect web db cache       # several at once
-pprint image inspect alpine       # summary of an image
-pprint service inspect api        # summary of a swarm service
-pprint --full inspect web         # every field, as a colored tree
+dvt inspect web                # summary of a container
+dvt inspect web db cache       # several at once
+dvt image inspect alpine       # summary of an image
+dvt service inspect api        # summary of a swarm service
+dvt --full inspect web         # every field, as a colored tree
 ```
 
 The summary shows what you usually look for:
@@ -290,17 +290,17 @@ Environment  (1)
 For an unhealthy container the summary also shows the output of the last
 failed health check. Other objects (networks, volumes, nodes...) are shown
 as a tree. Use `--format` to get docker's raw output, for example
-`pprint inspect --format '{{.State.Status}}' web`.
+`dvt inspect --format '{{.State.Status}}' web`.
 
 ### 4.5 Logs
 
 ```sh
-pprint logs web                           # all logs, colored
-pprint logs -f --tail 100 web             # follow, last 100 lines
-pprint --grep error logs web              # only lines matching "error"
-pprint --grep 'timeout|refused' logs -f api
-pprint service logs -f api                # swarm service logs
-pprint compose logs -f                    # compose logs, one color per service
+dvt logs web                           # all logs, colored
+dvt logs -f --tail 100 web             # follow, last 100 lines
+dvt --grep error logs web              # only lines matching "error"
+dvt --grep 'timeout|refused' logs -f api
+dvt service logs -f api                # swarm service logs
+dvt compose logs -f                    # compose logs, one color per service
 ```
 
 * Lines with ERROR, FATAL, PANIC or FAIL are red, WARN lines are yellow,
@@ -314,9 +314,9 @@ pprint compose logs -f                    # compose logs, one color per service
 ### 4.6 Dashboard
 
 ```sh
-pprint dash               # one snapshot
-pprint dash --watch       # live, refreshes every 2 seconds
-pprint --short dash       # without registry hosts in image names
+dvt dash               # one snapshot
+dvt dash --watch       # live, refreshes every 2 seconds
+dvt --short dash       # without registry hosts in image names
 ```
 
 ```
@@ -346,9 +346,9 @@ on swarm managers.
 ### 4.7 Images grouped by repository
 
 ```sh
-pprint images --group                 # one row per repository
-pprint --short images --group         # without the registry host
-pprint --grep backoffice images --group
+dvt images --group                 # one row per repository
+dvt --short images --group         # without the registry host
+dvt --grep backoffice images --group
 ```
 
 Instead of one row per tag, you get one row per repository, biggest first:
@@ -388,20 +388,20 @@ Instead of one row per tag, you get one row per repository, biggest first:
   be smaller than UNUSED SIZE.
 
 `--group` can go before or after `images`. `--sort` and `--cols` work on
-the grouped table too, for example `pprint --sort unused --desc images --group`.
+the grouped table too, for example `dvt --sort unused --desc images --group`.
 
-### 4.8 Clean up old images: `pprint clean`
+### 4.8 Clean up old images: `dvt clean`
 
 ```sh
-pprint clean --dry-run          # only show what would be deleted
-pprint clean                    # show the plan, then ask before deleting
-pprint clean --keep 2           # keep only the newest 2 tags per repository
-pprint clean --keep 5           # keep the newest 5 tags per repository
-pprint clean --grep api-v2      # only look at matching repositories
-pprint clean --yes              # delete without asking (for cron jobs)
+dvt clean --dry-run          # only show what would be deleted
+dvt clean                    # show the plan, then ask before deleting
+dvt clean --keep 2           # keep only the newest 2 tags per repository
+dvt clean --keep 5           # keep the newest 5 tags per repository
+dvt clean --grep api-v2      # only look at matching repositories
+dvt clean --yes              # delete without asking (for cron jobs)
 ```
 
-How pprint decides what to delete, per repository:
+How dvt decides what to delete, per repository:
 
 1. The newest **N** tags are always kept (`--keep N`, default **3**).
 2. Any image used by a container, **running or stopped**, is always kept.
@@ -428,7 +428,7 @@ Delete these 3 images? [y/N]
 * Nothing is deleted until you answer `y`. Any other answer, or Enter,
   cancels.
 * `--dry-run` also lists the tags being kept and why, then stops.
-* Without a terminal (in a script or cron job), pprint refuses to delete
+* Without a terminal (in a script or cron job), dvt refuses to delete
   unless you pass `--yes`.
 * Images are removed one at a time with `docker rmi repo:tag`, so one
   failure doesn't stop the rest. Each result is printed.
@@ -438,12 +438,12 @@ Delete these 3 images? [y/N]
   docker's own `docker container prune`, `docker volume prune` and
   `docker network prune`.
 
-### 4.9 Swarm doctor: `pprint doctor`
+### 4.9 Swarm doctor: `dvt doctor`
 
 ```sh
-pprint doctor                   # check every swarm service
-pprint doctor --full            # list every failed task instead of grouping
-pprint doctor --grep api        # only matching services
+dvt doctor                   # check every swarm service
+dvt doctor --full            # list every failed task instead of grouping
+dvt doctor --grep api        # only matching services
 ```
 
 For each service that isn't healthy, you get the replicas, the current
@@ -468,7 +468,7 @@ Swarm services: 12 healthy · 1 restarting · 1 failing
   4 failed tasks in recent history · now: Running 10s ago
   ...
   → The program inside the container exited with an error. See why with
-    `pprint errors crashy`.
+    `dvt errors crashy`.
 
 ✓ Healthy
 ┌──────────┬──────────┬──────────────────────────────┐
@@ -486,31 +486,31 @@ exits, exit 137 (out of memory or killed), no suitable node, ports already
 in use, missing mounts and failing health checks.
 
 Docker keeps only the last few tasks of each service (5 per replica by
-default), so "failed tasks in recent history" counts those. `pprint doctor`
+default), so "failed tasks in recent history" counts those. `dvt doctor`
 exits with code 1 when any service is failing, so it can be used in
 scripts and monitoring checks.
 
-### 4.10 Errors in logs: `pprint errors`
+### 4.10 Errors in logs: `dvt errors`
 
 Reads the logs and tells you what is breaking: errors and warnings are
 counted, and repeats of the same message are grouped, with how often it
 happened and when it was first and last seen.
 
 ```sh
-pprint errors                         # every service and container, last 30 minutes
-pprint errors transfers               # one stack (all of its services)
-pprint errors transfers_api           # one service
-pprint errors payments                # one container, by name
-pprint errors 9a8b7c --since 2d       # one container, by ID, last 2 days
-pprint errors transfers payments      # several at once
-pprint errors api --grep timeout      # count only lines matching a pattern
-pprint errors --full                  # every kind of message, not just the top 10
+dvt errors                         # every service and container, last 30 minutes
+dvt errors transfers               # one stack (all of its services)
+dvt errors transfers_api           # one service
+dvt errors payments                # one container, by name
+dvt errors 9a8b7c --since 2d       # one container, by ID, last 2 days
+dvt errors transfers payments      # several at once
+dvt errors api --grep timeout      # count only lines matching a pattern
+dvt errors --full                  # every kind of message, not just the top 10
 ```
 
 Example:
 
 ```
-$ pprint errors
+$ dvt errors
 Errors and warnings, last 30m: 7 errors · 1 warning in 2 of 5 sources
 ┌───────────────┬───────────┬────────┬──────────┬────────────┬───────┐
 │ SOURCE        │ KIND      │ ERRORS │ WARNINGS │ LAST ERROR │ LINES │
@@ -543,7 +543,7 @@ Errors and warnings, last 30m: 7 errors · 1 warning in 2 of 5 sources
 ```
 
 **What to pass.** Each name can be a stack, a service or a container, by
-name or ID (an ID can be shortened, like docker allows). pprint works out
+name or ID (an ID can be shortened, like docker allows). dvt works out
 which it is. If a stack and a service have the same name, the stack wins.
 With no name, it reads every swarm service plus every container that
 isn't part of a service. A service's own task containers are skipped,
@@ -565,12 +565,12 @@ ignored when comparing messages, so `Timeout calling 10.0.3.3 (order 3)` and
 `Timeout calling 10.0.3.6 (order 6)` are the same problem. The table shows
 the most recent example.
 
-**In scripts and cron.** `pprint errors` exits with code 1 when it finds
+**In scripts and cron.** `dvt errors` exits with code 1 when it finds
 any error, 0 when there are none (warnings alone give 0), and 2 when a
 name doesn't exist or `--since` is invalid. For example:
 
 ```sh
-pprint --no-color errors transfers --since 1h > /tmp/errors.txt || mail -s "transfers errors" ops@doublewave.uz < /tmp/errors.txt
+dvt --no-color errors transfers --since 1h > /tmp/errors.txt || mail -s "transfers errors" ops@doublewave.uz < /tmp/errors.txt
 ```
 
 Reading a long window over many containers can take a while, because
@@ -580,42 +580,42 @@ shorter `--since`.
 ### 4.11 Everything else
 
 Any command that isn't a table, logs or inspect runs exactly as if you'd
-typed it without `pprint`. That includes `run`, `exec -it`, `build`,
+typed it without `dvt`. That includes `run`, `exec -it`, `build`,
 `pull`, `events`, `login`, `--help` and typos. Their output, errors,
 exit codes and Ctrl+C all behave normally.
 
 ```sh
-pprint exec -it web sh      # works normally
-pprint --raw ps             # force plain docker output for a table command
+dvt exec -it web sh      # works normally
+dvt --raw ps             # force plain docker output for a table command
 ```
 
 ### 4.12 Non-docker commands
 
-pprint also tries to format other column-aligned output, such as
-`pprint kubectl get pods`. If the output isn't a table, it's printed
-unchanged. pprint waits for these commands to finish, so only use it with
+dvt also tries to format other column-aligned output, such as
+`dvt kubectl get pods`. If the output isn't a table, it's printed
+unchanged. dvt waits for these commands to finish, so only use it with
 commands that end on their own.
 
 ---
 
 ## 5. Options
 
-pprint's own options go **before** the command:
-`pprint --sort cpu stats`, not `pprint stats --sort cpu`.
+dvt's own options go **before** the command:
+`dvt --sort cpu stats`, not `dvt stats --sort cpu`.
 (Options after the command are passed to docker.)
 
 ### Table view
 
 | Option | What it does | Example |
 | --- | --- | --- |
-| `--cols A,B,...` | Show only these columns, in this order. Names can be shortened or abbreviated (`cpu`, `mem`, `img`, `id`, `stat`). | `pprint --cols name,status,ports ps` |
-| `--sort COL` | Sort rows by a column. Numbers, sizes (`512MiB`), percentages and ages sort by value. | `pprint --sort created images` |
-| `--desc` | Sort largest first. | `pprint --sort cpu --desc stats` |
-| `--grep REGEX` | Keep only rows (or log lines) matching, case-insensitive. | `pprint --grep api ps` |
-| `--short` | Hide the registry host in image names (`registry.example.uz/team/api:v1` → `team/api:v1`). | `pprint --short ps` |
-| `--long-times` | Keep `4 minutes ago` instead of `4m ago`. | `pprint --long-times ps` |
-| `--trunc` | Let docker truncate values as it normally does. | `pprint --trunc ps` |
-| `--width N` | Table width in characters (default: the terminal width). | `pprint --width 120 ps` |
+| `--cols A,B,...` | Show only these columns, in this order. Names can be shortened or abbreviated (`cpu`, `mem`, `img`, `id`, `stat`). | `dvt --cols name,status,ports ps` |
+| `--sort COL` | Sort rows by a column. Numbers, sizes (`512MiB`), percentages and ages sort by value. | `dvt --sort created images` |
+| `--desc` | Sort largest first. | `dvt --sort cpu --desc stats` |
+| `--grep REGEX` | Keep only rows (or log lines) matching, case-insensitive. | `dvt --grep api ps` |
+| `--short` | Hide the registry host in image names (`registry.example.uz/team/api:v1` → `team/api:v1`). | `dvt --short ps` |
+| `--long-times` | Keep `4 minutes ago` instead of `4m ago`. | `dvt --long-times ps` |
+| `--trunc` | Let docker truncate values as it normally does. | `dvt --trunc ps` |
+| `--width N` | Table width in characters (default: the terminal width). | `dvt --width 120 ps` |
 
 ### Modes
 
@@ -628,7 +628,7 @@ pprint's own options go **before** the command:
 | `--raw` | Run the command untouched. |
 | `--group` | `images`: one row per repository with total and unused size. |
 
-### pprint clean
+### dvt clean
 
 | Option | What it does |
 | --- | --- |
@@ -639,7 +639,7 @@ pprint's own options go **before** the command:
 `--grep` limits `clean` and `doctor` to matching repositories or services.
 `--full` makes `doctor` list every failed task.
 
-### pprint errors
+### dvt errors
 
 | Option | What it does |
 | --- | --- |
@@ -647,8 +647,8 @@ pprint's own options go **before** the command:
 | `--grep REGEX` | Count only log lines matching this. |
 | `--full` | Show every kind of message for each source, not just the top 10. |
 
-Unlike other commands, `pprint errors` accepts its options anywhere:
-`pprint errors api --since 2d` and `pprint --since 2d errors api` are the same.
+Unlike other commands, `dvt errors` accepts its options anywhere:
+`dvt errors api --since 2d` and `dvt --since 2d errors api` are the same.
 
 ### Output
 
@@ -659,11 +659,11 @@ Unlike other commands, `pprint errors` accepts its options anywhere:
 | `-V`, `--version` | Show the version. |
 | `-h`, `--help` | Show all options with examples. |
 
-If an unknown column name is given, pprint lists the available ones:
+If an unknown column name is given, dvt lists the available ones:
 
 ```
-$ pprint --cols bogus ps
-pprint: no column matches 'bogus'. Columns: container id, image, command, created, status, ports, names
+$ dvt --cols bogus ps
+dvt: no column matches 'bogus'. Columns: container id, image, command, created, status, ports, names
 ```
 
 ---
@@ -689,38 +689,38 @@ or a file), or when the `NO_COLOR` environment variable is set. Use
 
 ---
 
-## 7. Make plain `docker` use pprint
+## 7. Make plain `docker` use dvt
 
 If you'd like `docker ps` itself to be formatted, without typing
-`pprint`:
+`dvt`:
 
 ```sh
 # bash
-echo 'eval "$(pprint shell-init bash)"' >> ~/.bashrc
+echo 'eval "$(dvt shell-init bash)"' >> ~/.bashrc
 # zsh
-echo 'eval "$(pprint shell-init zsh)"' >> ~/.zshrc
+echo 'eval "$(dvt shell-init zsh)"' >> ~/.zshrc
 # fish
-echo 'pprint shell-init fish | source' >> ~/.config/fish/config.fish
+echo 'dvt shell-init fish | source' >> ~/.config/fish/config.fish
 ```
 
 Then open a new terminal. This defines a small `docker` shell function:
 
-* In your terminal, `docker ps` goes through pprint.
+* In your terminal, `docker ps` goes through dvt.
 * In pipes and scripts (`docker ps | grep x`, `$(docker ps -q)`), docker's
   raw output is untouched, so nothing that parses docker output breaks.
-* To skip pprint once, run `command docker ps`.
+* To skip dvt once, run `command docker ps`.
 
-To see exactly what gets added, run `pprint shell-init bash`.
+To see exactly what gets added, run `dvt shell-init bash`.
 
 ---
 
 ## 8. Default options
 
-Put options you always want in the `PPRINT_OPTS` environment variable.
+Put options you always want in the `DVT_OPTS` environment variable.
 They're applied before the ones you type:
 
 ```sh
-echo 'export PPRINT_OPTS="--short"' >> ~/.bashrc
+echo 'export DVT_OPTS="--short"' >> ~/.bashrc
 ```
 
 ---
@@ -729,84 +729,112 @@ echo 'export PPRINT_OPTS="--short"' >> ~/.bashrc
 
 | Installed with | Update by |
 | --- | --- |
-| A. source archive | Copy the new archive over, then `rm -rf ~/pprint && tar -xzf pprint-source.tar.gz -C ~`. The `~/bin/pprint` launcher stays as it is. |
-| B. git | `cd ~/pprint && git pull` |
-| C. pip | `cd ~/pprint && git pull && python3 -m pip install --user --upgrade .` |
-| D. single file | Build a new `dist/pprint` and copy it over the old one. |
+| A. source archive | Copy the new archive over, then `rm -rf ~/dvt && tar -xzf dvt-source.tar.gz -C ~`. The `~/bin/dvt` launcher stays as it is. |
+| B. git | `cd ~/dvt && git pull` |
+| C. pip | `cd ~/dvt && git pull && python3 -m pip install --user --upgrade .` |
+| D. single file | Build a new `dist/dvt` and copy it over the old one. |
 
-Check with `pprint --version`.
+Check with `dvt --version`.
+
+### Switching from pprint
+
+Up to version 2.4.1 this tool was called `pprint`. From 3.0 it is `dvt`
+everywhere, and the old name no longer works:
+
+| Before | Now |
+| --- | --- |
+| `pprint ps`, `dpp ps` | `dvt ps` |
+| `~/pprint` and the `~/bin/pprint` launcher | `~/dvt` and `~/bin/dvt` |
+| `python3 -m pprint_docker` | `python3 -m dvt` |
+| `PPRINT_OPTS="--short"` | `DVT_OPTS="--short"` |
+| `eval "$(pprint shell-init bash)"` | `eval "$(dvt shell-init bash)"` |
+| `pprint-source.tar.gz` | `dvt-source.tar.gz` |
+| pip package `pprint-docker` | pip package `dvt-docker` |
+
+On a server installed with method A:
+
+```sh
+# 1. Remove the old version
+rm -f ~/bin/pprint
+rm -rf ~/pprint
+
+# 2. Install dvt: method A, steps 1 and 2 (unpack dvt-source.tar.gz, create ~/bin/dvt)
+
+# 3. Rename the settings in your shell startup file, if you have them
+sed -i 's/pprint shell-init/dvt shell-init/; s/PPRINT_OPTS/DVT_OPTS/' ~/.bashrc
+
+# 4. Open a new terminal, then check
+dvt --version
+type pprint        # should say "not found"
+```
+
+All commands and options are the same as before; only the name changed.
 
 ---
 
 ## 10. Uninstall
 
 1. **Remove the shell integration** if you added it (section 7). Delete the
-   `pprint shell-init` line from `~/.bashrc`, `~/.zshrc` or
-   `~/.config/fish/config.fish`, plus any `PPRINT_OPTS` line.
+   `dvt shell-init` line from `~/.bashrc`, `~/.zshrc` or
+   `~/.config/fish/config.fish`, plus any `DVT_OPTS` line.
 
 2. **Remove the program**, matching how you installed it:
 
    ```sh
    # A / B: source archive or git
-   rm -f ~/bin/pprint
-   rm -rf ~/pprint
+   rm -f ~/bin/dvt
+   rm -rf ~/dvt
 
    # A, installed for every user
-   sudo rm -f /usr/local/bin/pprint
-   sudo rm -rf /opt/pprint
+   sudo rm -f /usr/local/bin/dvt
+   sudo rm -rf /opt/dvt
 
    # C: pip
-   python3 -m pip uninstall pprint-docker
+   python3 -m pip uninstall dvt-docker
 
    # D: single file
-   rm -f ~/bin/pprint        # or wherever you copied it
+   rm -f ~/bin/dvt        # or wherever you copied it
    ```
 
 3. Open a new terminal (or run `hash -r`) and check:
 
    ```sh
-   type pprint               # should say "not found"
+   type dvt               # should say "not found"
    ```
 
-pprint doesn't change docker or any container, image or setting, and it
+dvt doesn't change docker or any container, image or setting, and it
 doesn't write any files of its own, so there's nothing else to clean up.
 
 ---
 
 ## 11. Troubleshooting
 
-**`pprint: command not found`**
+**`dvt: command not found`**
 `~/bin` isn't on your PATH. Run `export PATH="$HOME/bin:$PATH"` and add
 that line to `~/.bashrc`. Then run `hash -r`.
 
-**`pprint --version` shows an old version, or the old behaviour**
-An old alias or file is still in use. Run `type pprint`, then delete the
+**`dvt --version` shows an old version, or the old behaviour**
+An old alias or file is still in use. Run `type dvt`, then delete the
 alias from `~/.bashrc` or the old file it points to, and open a new
 terminal.
 
-**`ImportError: cannot import name 'pprint' from 'pprint'`** (or other
-Python errors mentioning pprint)
-There's a file called `pprint.py` in your current folder or on
-`PYTHONPATH`. It hides Python's built-in `pprint` module. Delete or
-rename it.
-
-**`No module named pprint_docker`**
-The launcher can't find the source. Check that `~/pprint/src/pprint_docker`
-exists. If you unpacked it somewhere else, fix the path in `~/bin/pprint`.
+**`No module named dvt`**
+The launcher can't find the source. Check that `~/dvt/src/dvt`
+exists. If you unpacked it somewhere else, fix the path in `~/bin/dvt`.
 
 **`SyntaxError` when starting**
 Python is older than 3.7. Check with `python3 --version`.
 
 **`Cannot connect to the Docker daemon`**
 That message comes from docker itself. Check that `docker ps` works
-without pprint (permissions, `sudo`, or the `docker` group).
+without dvt (permissions, `sudo`, or the `docker` group).
 
 **No colors**
 The output isn't going to a terminal, or `NO_COLOR` is set. Use `--color`
 to force them.
 
 **The table is too wide or wraps too much**
-pprint uses the terminal width. Make the window wider, use `--cols` to
+dvt uses the terminal width. Make the window wider, use `--cols` to
 show fewer columns, use `--short` for image names, or set `--width`.
 
 **The live view shows "… N more lines"**
@@ -815,56 +843,57 @@ The window isn't tall enough. Make it taller, or narrow the list with
 
 **A command hangs**
 Docker commands that stream (`logs -f`, `events`, `stats`) are handled by
-pprint and stop with Ctrl+C. A non-docker command that never finishes
-will hang, because pprint waits for its output. Use `--raw` for those.
+dvt and stop with Ctrl+C. A non-docker command that never finishes
+will hang, because dvt waits for its output. Use `--raw` for those.
 
-**`pprint errors` shows "! name: Error response from daemon: ... does not support reading"**
+**`dvt errors` shows "! name: Error response from daemon: ... does not support reading"**
 That container or service uses a logging driver docker can't read back
 (for example `syslog` or `gelf` without dual logging). Its logs live in
-that system instead, so pprint can't count them.
+that system instead, so dvt can't count them.
 
-**`pprint errors` says "no stack, service or container called ..."**
-Check the name with `pprint service ls`, `pprint stack ls` or
-`pprint ps -a`. Stacks and services are only visible on a swarm manager.
+**`dvt errors` says "no stack, service or container called ..."**
+Check the name with `dvt service ls`, `dvt stack ls` or
+`dvt ps -a`. Stacks and services are only visible on a swarm manager.
 
 **`--sort` or `--cols` passed to docker by mistake**
-pprint's options must come before the command: `pprint --sort cpu stats`.
+dvt's options must come before the command: `dvt --sort cpu stats`.
 
 ---
 
 ## 12. FAQ
 
-**Does pprint change anything in docker?**
-Only `pprint clean` deletes anything, and only image tags, after you
+**Does dvt change anything in docker?**
+Only `dvt clean` deletes anything, and only image tags, after you
 confirm. Everything else just runs the docker command you give it,
 sometimes adding read-only display flags (`--no-trunc`, `--no-stream`),
 and reformats the output.
 
-**Can `pprint clean` delete an image a service needs?**
+**Can `dvt clean` delete an image a service needs?**
 Not one that any container uses, running or stopped. But a service that
 is scaled to 0, or a tag you plan to deploy later, has no container. If
 you need such a tag, raise `--keep`, or check with `--dry-run` first.
 
 **Is it safe in scripts?**
-Scripts should call `docker` directly, or use `pprint --raw`. With the
+Scripts should call `docker` directly, or use `dvt --raw`. With the
 shell integration from section 7, `docker` in pipes and scripts already
 gets docker's raw output.
 
 **Does it work with old docker versions?**
-Yes. pprint asks docker for JSON where it can, which is exact even when
+Yes. dvt asks docker for JSON where it can, which is exact even when
 values contain spaces or cells are empty. If docker doesn't understand the
-request, pprint quietly reads the normal text output instead.
+request, dvt quietly reads the normal text output instead.
 
 **Can I still use `--format`?**
-Yes. `pprint ps --format '{{.Names}}'` is passed straight through.
+Yes. `dvt ps --format '{{.Names}}'` is passed straight through.
 `--format 'table ...'` output is still formatted as a table.
 
-**`pprint ps` runs docker, but I wanted Linux `ps`.**
-pprint treats `ps` and `top` as docker commands. Use the full path for the
-Linux tools: `pprint /bin/ps aux`.
+**`dvt ps` runs docker, but I wanted Linux `ps`.**
+dvt treats `ps` and `top` as docker commands. Use the full path for the
+Linux tools: `dvt /bin/ps aux`.
 
-**What is `dpp`?**
-A short alias for `pprint`, installed by pip (method C).
+**Why the name dvt?**
+It's short to type and doesn't collide with the `pprint` module that comes
+with Python, which the old name did.
 
 **Does it need internet?**
 No. It only needs Python 3.7+ and the docker CLI.
@@ -876,12 +905,12 @@ No. It only needs Python 3.7+ and the docker CLI.
 ### Project layout
 
 ```
-pprint/
+dvt/
 ├── README.md
-├── pyproject.toml          package metadata, `pprint` and `dpp` commands
+├── pyproject.toml          package metadata, the `dvt` command
 ├── Makefile                test / build / zipapp shortcuts
-├── src/pprint_docker/
-│   ├── __main__.py         `python3 -m pprint_docker` starts here
+├── src/dvt/
+│   ├── __main__.py         `python3 -m dvt` starts here
 │   ├── cli.py              options and dispatch to the right feature
 │   ├── docker.py           which docker command is it; flags to add
 │   ├── table.py            Table model; parsing column-aligned output
@@ -898,12 +927,12 @@ pprint/
 │       ├── live.py         full-screen redraw (stats, --watch, dash --watch)
 │       ├── logs.py         colored logs and --grep
 │       ├── inspect.py      inspect summaries and JSON tree
-│       ├── dashboard.py    pprint dash
+│       ├── dashboard.py    dvt dash
 │       ├── images.py       in-use marks, image data, images --group
-│       ├── clean.py        pprint clean
-│       ├── doctor.py       pprint doctor
-│       ├── errors.py       pprint errors
-│       └── shell.py        pprint shell-init
+│       ├── clean.py        dvt clean
+│       ├── doctor.py       dvt doctor
+│       ├── errors.py       dvt errors
+│       └── shell.py        dvt shell-init
 ├── .github/workflows/
 │   └── tests.yml           CI: unit tests per Python, real tests per Docker
 └── tests/
@@ -915,7 +944,7 @@ pprint/
 
 ### How a command flows
 
-1. `cli.py` reads pprint's options and adds `docker` in front if you left
+1. `cli.py` reads dvt's options and adds `docker` in front if you left
    it out.
 2. `docker.py` classifies the command as table, stats, logs, inspect or
    passthrough.
@@ -932,8 +961,8 @@ pprint/
 ### Run from source without installing
 
 ```sh
-cd ~/pprint
-PYTHONPATH=src python3 -m pprint_docker ps
+cd ~/dvt
+PYTHONPATH=src python3 -m dvt ps
 ```
 
 ### Tests
@@ -967,14 +996,14 @@ version and `tests/real` against each Docker version, on every push.
 ### Build
 
 ```sh
-make zipapp        # dist/pprint, one executable file
+make zipapp        # dist/dvt, one executable file
 make build         # wheel + sdist in dist/ (needs: pip install build)
 make clean         # remove build output
 ```
 
 ### Adding a new table command
 
-Add it to `TABLE_COMMANDS` in `src/pprint_docker/docker.py`. If docker
+Add it to `TABLE_COMMANDS` in `src/dvt/docker.py`. If docker
 supports `--no-trunc` for it, add it to `NO_TRUNC` as well. To read it as
 JSON, add its columns (header and `--format` field) to `LAYOUTS` in
 `formats.py` and a JSON fixture to `tests/fixtures`. To color a new

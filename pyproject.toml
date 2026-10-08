@@ -3,7 +3,7 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pprint-docker"
+name = "dvt-docker"
 description = "Readable, colored output for docker commands: tables, live stats, inspect summaries, logs and a dashboard."
 readme = "README.md"
 requires-python = ">=3.7"
@@ -17,14 +17,13 @@ classifiers = [
 ]
 
 [project.scripts]
-pprint = "pprint_docker.cli:main"
-dpp = "pprint_docker.cli:main"
+dvt = "dvt.cli:main"
 
 [project.optional-dependencies]
 test = ["pytest"]
 
 [tool.setuptools.dynamic]
-version = { attr = "pprint_docker.__version__" }
+version = { attr = "dvt.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
