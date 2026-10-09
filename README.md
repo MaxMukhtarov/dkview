@@ -8,7 +8,7 @@ and it adds the few views an operator actually wants at 3am: what is broken,
 what is in the logs, and what the host is doing right now. Nothing to install,
 no agent, no daemon, no network access, no root.
 
-![dkview in a terminal: ps, errors, doctor and dash](https://raw.githubusercontent.com/MaxMukhtarov/pprint-docker/feature/docs/demo.gif)
+![dkview in a terminal: ps, errors, doctor and dash](https://raw.githubusercontent.com/MaxMukhtarov/dkview/feature/docs/demo.gif)
 
 ## Why it exists
 
@@ -90,8 +90,8 @@ terminal that is 80 to 120 columns wide.
 It is also fine on a laptop with Docker Desktop or Podman, but there the
 graphical tools are right there, so you will get less out of it.
 
-* Repository: https://github.com/MaxMukhtarov/pprint-docker (branch `feature`)
-* Version: 3.0.0b5 (up to 2.4.1 this tool was called **pprint**, and the 3.0 betas
+* Repository: https://github.com/MaxMukhtarov/dkview (branch `feature`)
+* Version: 3.0.0b6 (up to 2.4.1 this tool was called **pprint**, and the 3.0 betas
   up to 3.0.0b4 were called **dvt**; see [Switching from pprint or dvt](#switching-from-pprint-or-dvt))
 * Needs: Python 3.7 or newer, and Docker 20.10 or newer or Podman 4 or newer. No other
   packages, no internet. Works on Linux, macOS and Windows (Docker Desktop).
@@ -168,7 +168,7 @@ sudo chmod +x /usr/local/bin/dkview
 ### B. From GitHub (machines with access to GitHub)
 
 ```sh
-git clone -b feature https://github.com/MaxMukhtarov/pprint-docker.git ~/dkview
+git clone -b feature https://github.com/MaxMukhtarov/dkview.git ~/dkview
 ```
 
 Then do step 2 of method A to create the `~/bin/dkview` command.
@@ -245,7 +245,7 @@ To make plain `docker` use dkview in PowerShell, see section 7.
 
 ```sh
 type dkview            # should point to ~/bin/dkview (or your chosen path)
-dkview --version       # dkview 3.0.0b5
+dkview --version       # dkview 3.0.0b6
 dkview ps              # your containers as a table
 ```
 

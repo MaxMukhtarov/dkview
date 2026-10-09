@@ -1,5 +1,3 @@
-"""Podman, Docker Desktop on Windows/macOS: picking the engine and its quirks."""
-
 import io
 import sys
 
@@ -31,11 +29,11 @@ def test_engine_choice(monkeypatch):
     assert docker.expand_shortcut(["ps", "-a"]) == ["podman", "ps", "-a"]
     monkeypatch.delenv("DKVIEW_ENGINE")
     monkeypatch.setattr(engine.shutil, "which", lambda name: name == "podman" and "/usr/bin/podman")
-    assert engine.name() == "podman"          # docker missing, podman found
+    assert engine.name() == "podman"
     monkeypatch.setattr(engine.shutil, "which", lambda name: "/usr/bin/" + name)
-    assert engine.name() == "docker"          # both: docker wins
+    assert engine.name() == "docker"
     monkeypatch.setattr(engine.shutil, "which", lambda name: None)
-    assert engine.name() == "docker"          # neither: docker's own error shows
+    assert engine.name() == "docker"
 
 
 def test_podman_labels_and_info():
@@ -56,7 +54,7 @@ def test_powershell_integration():
 
 def test_output_never_crashes_on_old_code_pages(monkeypatch):
     raw = io.BytesIO()
-    stream = io.TextIOWrapper(raw, encoding="cp1252", newline="\n")  # no \r\n on Windows
+    stream = io.TextIOWrapper(raw, encoding="cp1252", newline="\n")
     monkeypatch.setattr(sys, "stdout", stream)
     ansi.prepare_output()
     sys.stdout.write("● ✓ ┌─┐ ü 漢\n")

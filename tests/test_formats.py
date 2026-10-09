@@ -1,5 +1,3 @@
-"""Reading list commands as JSON, and falling back to text on old docker."""
-
 import pytest
 
 from dkview import formats
@@ -27,13 +25,13 @@ def test_json_and_text_give_the_same_table(fake_docker, command):
     assert new.returncode == old.returncode == 0, new.stderr + old.stderr
     assert new.stdout == old.stdout
     assert "┌" in new.stdout
-    assert any("--format" in c for c in calls)           # JSON was used
+    assert any("--format" in c for c in calls)
 
 
 def test_old_docker_falls_back_to_text(fake_docker):
     result = fake_docker.run("service", "ls", env=OLD)
     assert result.returncode == 0 and "REPLICAS" in result.stdout
-    assert result.stderr == ""                            # the template error is hidden
+    assert result.stderr == ""
     calls = fake_docker.calls()
     assert "--format" in calls[0] and "--format" not in calls[1]
 
@@ -57,7 +55,7 @@ def test_template_names_each_field():
     template = formats.template(formats.NODES)
     assert template.startswith('{"ID":{{json .ID}},')
     assert '"Self":{{json .Self}}' in template
-    assert "{{json .}}" not in template                  # would make ps slow
+    assert "{{json .}}" not in template
 
 
 def test_tasks_and_nodes_look_like_docker():

@@ -1,5 +1,3 @@
-"""`dkview doctor`: what is wrong with each swarm service, and why."""
-
 from __future__ import annotations
 
 import json
@@ -29,8 +27,8 @@ class Task:
     slot: str
     node: str
     desired: str
-    state: str      # "Failed"
-    when: str       # "4s ago"
+    state: str
+    when: str
     error: str
 
     @classmethod
@@ -129,8 +127,6 @@ def collect(argv: Sequence[str]) -> Optional[List[ServiceReport]]:
     return services
 
 
-# ------------------------------------------------------------------ hints
-
 _HINTS = [
     (r"failed to resolve reference|no such image|manifest unknown|not found: manifest|"
      r"pull access denied|unauthorized",
@@ -162,8 +158,6 @@ def hint(error: str, service: str) -> str:
     return ""
 
 
-# -------------------------------------------------------------- rendering
-
 def error_table(report: ServiceReport, every_task: bool) -> Table:
     if every_task:
         table = Table(["TASK", "NODE", "STATE", "WHEN", "ERROR"])
@@ -185,7 +179,7 @@ def error_table(report: ServiceReport, every_task: bool) -> Table:
 
 def _current(report: ServiceReport) -> str:
     latest: Dict[str, Task] = OrderedDict()
-    for t in report.tasks:  # docker lists the newest task of each slot first
+    for t in report.tasks:
         latest.setdefault(t.slot, t)
     states = [f"{t.state} {t.when}".strip() for t in latest.values()
               if t.desired.lower() != "shutdown" or t.failed]

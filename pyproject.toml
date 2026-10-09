@@ -31,9 +31,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/MaxMukhtarov/pprint-docker"
-Source = "https://github.com/MaxMukhtarov/pprint-docker"
-Issues = "https://github.com/MaxMukhtarov/pprint-docker/issues"
+Homepage = "https://github.com/MaxMukhtarov/dkview"
+Source = "https://github.com/MaxMukhtarov/dkview"
+Issues = "https://github.com/MaxMukhtarov/dkview/issues"
 
 [project.scripts]
 dkview = "dkview.cli:main"

@@ -1,5 +1,3 @@
-"""dkview errors: counting and grouping errors and warnings from logs."""
-
 import json
 import os
 from datetime import datetime, timezone
@@ -58,8 +56,8 @@ def test_source_counts_groups_and_docker_messages(fixture_lines):
     assert len(source.groups) == 3
     timeout = max(source.groups.values(), key=lambda g: g.count)
     assert timeout.count == 3
-    assert "(order 9)" in timeout.message           # the newest example
-    assert not timeout.message.startswith("2026")   # the app's own timestamp is dropped
+    assert "(order 9)" in timeout.message
+    assert not timeout.message.startswith("2026")
     assert source.problem == "Error response from daemon: No such service"
 
 
@@ -91,7 +89,7 @@ def test_quiet_sources_wrap_to_the_width(fixture_lines):
     quiet = [errors.Source("quiet-" + "x" * 12 + str(i), "service", []) for i in range(6)]
     out = errors.render_report(quiet + [api], Options(width=70), "30m", now=NOW)
     wrapped = [l for l in out.splitlines() if "quiet-" in l]
-    assert len(wrapped) > 1                       # the list is wrapped, not cut
+    assert len(wrapped) > 1
     assert max(len(l) for l in wrapped) <= 70
     assert wrapped[1].startswith(" " * len("x nothing in "))
 
@@ -126,8 +124,6 @@ def test_everything_skips_swarm_task_containers():
     names = [s.name for s in errors.everything(host, ["docker"], "1800s")]
     assert names == ["orders_api", "orders_worker", "traefik", "checkout", "quiet-box"]
 
-
-# --------------------------------------------------------------- end to end
 
 def test_errors_for_the_whole_host(fake_docker):
     result = fake_docker.run("errors", env=ERRORS)
@@ -171,7 +167,6 @@ def test_errors_clean_target_exits_zero(fake_docker):
 
 @pytest.mark.skipif(os.name == "nt", reason="uses sh")
 def test_logs_that_never_finish_are_cut_off():
-    """`docker service logs` can print everything and then hang."""
     import time
     source = errors.Source("api", "service", [
         "sh", "-c", "echo '2026-10-07T18:00:01.0Z ERROR boom'; exec sleep 30"])

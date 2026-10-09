@@ -1,5 +1,3 @@
-"""Terminal colors and helpers that measure text without escape codes."""
-
 from __future__ import annotations
 
 import os
@@ -22,16 +20,12 @@ ANSI_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
 
 def _enable_windows_ansi() -> bool:
-    """Windows 10+ consoles understand color codes once asked to.
-
-    Returns False when they can't (old Windows), so colors stay off there.
-    """
     if os.name != "nt":
         return True
     try:
         import ctypes
         kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
-        handle = kernel32.GetStdHandle(-11)  # stdout
+        handle = kernel32.GetStdHandle(-11)
         mode = ctypes.c_uint32()
         if not kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
             return False
@@ -40,9 +34,7 @@ def _enable_windows_ansi() -> bool:
         return False
 
 
-# Plain-ASCII stand-ins, for outputs that can't show box drawing or symbols
-# (a pipe or an old console on Windows that uses a legacy code page).
-# Characters that can sit inside a table cell map to one character.
+# for consoles on legacy code pages
 ASCII = str.maketrans({
     "┌": "+", "┬": "+", "┐": "+", "├": "+", "┼": "+", "┤": "+", "└": "+", "┴": "+",
     "┘": "+", "─": "-", "│": "|", "●": "*", "○": "o", "✓": "OK", "✗": "X",
@@ -51,7 +43,6 @@ ASCII = str.maketrans({
 
 
 class _AsciiWriter:
-    """Wraps a text stream, writing ASCII stand-ins for what it can't encode."""
 
     def __init__(self, stream) -> None:
         self._stream = stream
@@ -72,8 +63,6 @@ def _can_show(stream, sample: str = "┌─●✓") -> bool:
 
 
 def prepare_output() -> None:
-    """Never crash on a character the output's encoding lacks: use ASCII
-    stand-ins for box lines and symbols, and '?' for anything else."""
     for name in ("stdout", "stderr"):
         stream = getattr(sys, name)
         if stream is None or _can_show(stream):
@@ -87,7 +76,6 @@ def prepare_output() -> None:
 
 
 class _Colors:
-    """Process-wide switch for colored output."""
 
     def __init__(self) -> None:
         self.enabled = (sys.stdout.isatty() and "NO_COLOR" not in os.environ
@@ -112,7 +100,6 @@ def visible_len(text: str) -> int:
 
 
 def pad(text: str, width: int) -> str:
-    """ljust that ignores ANSI escape codes when measuring."""
     return text + " " * max(0, width - visible_len(text))
 
 

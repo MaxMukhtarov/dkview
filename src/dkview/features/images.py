@@ -1,5 +1,3 @@
-"""`docker images`: in-use marks, image data and the grouped view."""
-
 from __future__ import annotations
 
 import json
@@ -33,7 +31,6 @@ def is_image_list(argv: Sequence[str]) -> bool:
 
 
 def global_options(argv: Sequence[str]) -> List[str]:
-    """`docker --context prod images` -> ['docker', '--context', 'prod']."""
     first = docker.words(argv, limit=1)
     if not first:
         return list(argv[:1])
@@ -41,10 +38,6 @@ def global_options(argv: Sequence[str]) -> List[str]:
 
 
 def used_image_ids(argv: Sequence[str]) -> Optional[Set[str]]:
-    """Image IDs of all containers, running or stopped (12 hex characters).
-
-    Returns None when docker can't be asked, so nothing gets marked.
-    """
     base = global_options(argv)
     ids = capture(base + ["ps", "-a", "-q", "--no-trunc"])
     if ids.code != 0:
@@ -60,7 +53,6 @@ def used_image_ids(argv: Sequence[str]) -> Optional[Set[str]]:
 
 
 def mark_in_use(table: Table, used: Set[str]) -> bool:
-    """Put ● (in use) or ○ (not used) before each image name."""
     id_col = table.column("IMAGE ID")
     if id_col is None:
         id_col = table.column("ID")
@@ -77,15 +69,13 @@ def mark_in_use(table: Table, used: Set[str]) -> bool:
     return True
 
 
-# ------------------------------------------------------------ image data
-
 @dataclass
 class ImageInfo:
     repository: str
     tag: str
-    id: str              # 12 hex characters
+    id: str
     created: Optional[datetime]
-    size: float          # bytes
+    size: float
     in_use: bool = False
 
     @property
@@ -94,7 +84,6 @@ class ImageInfo:
 
     @property
     def reference(self) -> str:
-        """What to pass to `docker rmi`: repo:tag, or the ID for dangling images."""
         if self.dangling or self.tag == "<none>":
             return self.id
         return f"{self.repository}:{self.tag}"
@@ -111,10 +100,6 @@ def _json_lines(text: str) -> List[dict]:
 
 
 def load_images(argv: Sequence[str]) -> Optional[List[ImageInfo]]:
-    """Every tagged image plus dangling ones, with in-use flags.
-
-    Returns None (after printing docker's error) when docker can't be asked.
-    """
     base = global_options(argv)
     fmt = ["--no-trunc", "--format",
            fields_template(["Repository", "Tag", "ID", "CreatedAt", "Size"])]
@@ -157,12 +142,9 @@ def by_repository(images: Iterable[ImageInfo]) -> Dict[str, List[ImageInfo]]:
 
 
 def unique_size(images: Iterable[ImageInfo]) -> float:
-    """Total size, counting an image ID once even if it has several tags."""
     sizes = {i.id: i.size for i in images}
     return sum(sizes.values())
 
-
-# --------------------------------------------------------- grouped view
 
 def group_table(images: List[ImageInfo], short: bool) -> Table:
     table = Table(["REPOSITORY", "TAGS", "NEWEST TAG", "NEWEST", "IN USE",

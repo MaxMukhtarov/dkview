@@ -1,5 +1,3 @@
-"""Full-screen views that redraw in place, like `top` or `watch`."""
-
 from __future__ import annotations
 
 import sys
@@ -9,7 +7,7 @@ from typing import Callable
 
 from ..ansi import DIM, BOLD, paint, terminal_size
 
-ALT_SCREEN_ON = "\033[?1049h\033[?25l"   # alternate screen, hide cursor
+ALT_SCREEN_ON = "\033[?1049h\033[?25l"
 ALT_SCREEN_OFF = "\033[?25h\033[?1049l"
 HOME = "\033[H"
 CLEAR_LINE = "\033[K"
@@ -17,7 +15,6 @@ CLEAR_BELOW = "\033[J"
 
 
 def run(frame: Callable[[int], str], title: str, interval: float) -> int:
-    """Call frame(width) every `interval` seconds and redraw until Ctrl+C."""
     if not sys.stdout.isatty():
         sys.stdout.write(frame(terminal_size().columns))
         return 0

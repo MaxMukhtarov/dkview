@@ -1,5 +1,3 @@
-"""`dkview clean`: remove old, unused image tags, keeping the newest few."""
-
 from __future__ import annotations
 
 import sys
@@ -22,13 +20,10 @@ DELETE = "delete"
 @dataclass
 class Decision:
     image: ImageInfo
-    action: str  # "delete", "keep: in use", "keep: newest"
+    action: str
 
 
 def plan(images: List[ImageInfo], keep: int) -> List[Decision]:
-    """Decide per tag. Per repository the `keep` newest tags always stay,
-    images used by any container (running or stopped) always stay, and
-    the rest is deleted. Dangling images (<none>) are deleted when unused."""
     decisions = []
     for repo, items in by_repository(images).items():
         for rank, image in enumerate(items):
@@ -45,7 +40,6 @@ def plan(images: List[ImageInfo], keep: int) -> List[Decision]:
 
 
 def freed_space(decisions: List[Decision]) -> float:
-    """Space released: an image ID only counts when every tag of it goes."""
     sizes = {}
     kept_ids = set()
     for d in decisions:
@@ -95,7 +89,6 @@ def confirm(question: str) -> bool:
 
 
 def remove(argv: Sequence[str], targets: List[ImageInfo]) -> Tuple[int, List[str]]:
-    """Delete one reference at a time so one failure doesn't stop the rest."""
     base = global_options(argv)
     removed, errors = 0, []
     for image in targets:

@@ -1,14 +1,3 @@
-"""Fixtures for the tests that run against a real docker daemon.
-
-They are skipped unless REAL_DOCKER=1 is set, because they create a swarm,
-services, a stack and containers (all named rt_*) and remove them again.
-Needed images: busybox:latest (load it beforehand on machines without
-internet).
-
-DKVIEW_ENGINE=podman runs them against Podman instead; the swarm parts
-(services, stacks, nodes) are skipped there.
-"""
-
 import json
 import os
 import subprocess

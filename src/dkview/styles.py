@@ -1,5 +1,3 @@
-"""Coloring cells by meaning: healthy is green, broken is red."""
-
 from __future__ import annotations
 
 import re
@@ -30,7 +28,6 @@ def container_status(value: str) -> Optional[str]:
 
 
 def state_word(value: str) -> Optional[str]:
-    """Single-word states: compose STATE, service ps CURRENT STATE, node STATUS."""
     v = value.lower().split(" ")[0] if value else ""
     if v in ("running", "ready", "active", "complete", "healthy", "leader", "reachable"):
         return GOOD if v != "complete" else MUTED
@@ -69,7 +66,6 @@ def percent(value: str) -> Optional[str]:
 
 
 def styler(header: str, value: str) -> Optional[str]:
-    """Pick a color for one cell, based on its column and value."""
     if not value:
         return None
     h = header.upper()

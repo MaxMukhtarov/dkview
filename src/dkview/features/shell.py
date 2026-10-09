@@ -1,11 +1,7 @@
-"""`dkview shell-init`: make plain `docker ...` go through dkview."""
-
 from __future__ import annotations
 
 POSIX = """\
 # dkview: format docker output when printing to a terminal.
-# Scripts and pipes (docker ps | grep ...) still get docker's raw output.
-# Use `command docker ...` to bypass it once.
 docker() {
     if [ -t 1 ]; then
         command dkview docker "$@"

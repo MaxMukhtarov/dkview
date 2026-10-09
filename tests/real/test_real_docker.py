@@ -1,9 +1,3 @@
-"""The whole tool against a real docker daemon (REAL_DOCKER=1).
-
-Run the same file against each docker version to support, e.g. in the
-GitHub Actions matrix (.github/workflows/tests.yml).
-"""
-
 import os
 import re
 import subprocess
@@ -22,7 +16,6 @@ from .conftest import ENGINE, PODMAN, ROOT
 
 SWARM = pytest.mark.skipif(PODMAN, reason="podman has no swarm")
 
-# Values that change between two calls a moment apart.
 _MOVING = re.compile(r"\d+(\.\d+)?\s*(%|[kKMGT]i?B|B\b)|\d+ (second|minute)s?|"
                      r"less than a second|about a minute|\d+s\b")
 
@@ -38,18 +31,16 @@ JSON_COMMANDS = [
     "service ls", "service ps rt_api", "service ps rt_broken", "stack ps rt",
     "node ls", "node ps", "stats",
 ]
-# Podman's own text differs from docker's (headers like "NET IO", extra
-# stats columns), so only the commands with the same text are compared.
+# podman's headers differ, so only identical commands are compared
 PODMAN_SAME_TEXT = {"ps -a", "ps -s", "container ls -a", "images", "images --digests", "image ls"}
 
 
 @pytest.mark.parametrize("command", JSON_COMMANDS)
 def test_json_table_matches_docker_text(host, command):
-    """Every JSON field maps to the column docker itself prints."""
     if PODMAN and command not in PODMAN_SAME_TEXT:
         pytest.skip("podman: swarm command or different text layout")
     prepared = docker_cli.prepare([ENGINE] + command.split(), trunc=False)
-    for _ in range(3):  # a task may start or stop between the two calls
+    for _ in range(3):
         result, json_table = tables.read_json(prepared)
         assert json_table is not None, f"docker {host} rejected the JSON template: " \
             + (result.stderr if result else "fell back to text")
@@ -79,9 +70,8 @@ def run(*args, timeout=60):
     )
 
 
-SW = "swarm"  # needs docker swarm (skipped on podman)
+SW = "swarm"
 CLI = [
-    # (arguments, exit codes allowed, text the output must contain, needs)
     (["ps", "-a"], {0}, "rt_web", ""),
     (["--short", "--sort", "created", "--desc", "ps", "-a"], {0}, "rt_done", ""),
     (["--cols", "name,status", "ps"], {0}, "NAMES", ""),
@@ -129,7 +119,7 @@ def test_cli(host, args, codes, expected, needs):
 def test_errors_groups_repeats(host):
     out = run("errors", "rt_api").stdout
     timeout_rows = [line for line in out.splitlines() if "ERROR Timeout calling" in line]
-    assert len(timeout_rows) == 1, out          # one group, not one row per IP/order
+    assert len(timeout_rows) == 1, out
     assert "warning" in out.splitlines()[0]
 
 

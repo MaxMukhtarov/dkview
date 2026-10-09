@@ -12,7 +12,7 @@ from dkview.styles import styler
     ("STATUS", "Exited (0) 3 hours ago", DIM),
     ("STATUS", "Exited (137) 3 hours ago", RED),
     ("STATUS", "Restarting (1) 5 seconds ago", YELLOW),
-    ("STATUS", "Ready", GREEN),          # docker node ls
+    ("STATUS", "Ready", GREEN),
     ("STATUS", "Down", RED),
     ("REPLICAS", "2/2", GREEN),
     ("REPLICAS", "1/3", YELLOW),

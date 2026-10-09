@@ -1,18 +1,13 @@
-"""End-to-end runs of `python -m dkview` against a fake docker."""
-
-
 def test_ps_table_with_shortcut(fake_docker):
     result = fake_docker.run("ps", "-a")
     assert result.returncode == 0
     assert "┌" in result.stdout and "NAMES" in result.stdout
     calls = fake_docker.calls()
     assert len(calls) == 1 and calls[0][:4] == ["ps", "-a", "--no-trunc", "--format"]
-    # Full 64-character IDs are shortened back to 12.
     assert "26a04fd7c376e78" not in result.stdout
 
 
 def test_stats_does_not_hang(fake_docker):
-    # stdout is not a terminal here, so this prints one snapshot.
     result = fake_docker.run("docker", "stats", timeout=10)
     assert result.returncode == 0
     assert "CPU %" in result.stdout
@@ -37,7 +32,7 @@ def test_cols_sort_and_grep(fake_docker):
     lines = [line for line in result.stdout.splitlines() if line.startswith("│")]
     assert lines[0].split("│")[1].strip() == "NAMES"
     names = [line.split("│")[1].strip() for line in lines[1:]]
-    assert "oneshot" not in names  # exited, filtered out by --grep up
+    assert "oneshot" not in names
     assert names == sorted(names)
 
 
@@ -82,7 +77,6 @@ def test_images_mark_the_ones_in_use(fake_docker):
     assert any(r.startswith("│ ● alpine") for r in rows)
     assert any(r.startswith("│ ○ busybox") for r in rows)
     assert "● used by a container" in result.stdout
-    # Containers are looked up, running and stopped alike.
     assert ["ps", "-a", "-q", "--no-trunc"] in fake_docker.calls()
 
 

@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""Stand-in for the docker CLI, serving recorded output from tests/fixtures.
-
-Every call's arguments are appended to $FAKE_DOCKER_LOG so tests can check
-what dkview actually ran.
-"""
 
 import json
 import os
@@ -22,7 +17,6 @@ def fixture(name: str) -> str:
 
 
 def errors_scenario(args, words) -> int:
-    """A swarm with a stack "orders", a lone container and docker's own errors."""
     if words[:2] == ["service", "ls"]:
         sys.stdout.write(fixture("errors_services.jsonl"))
     elif words[:2] == ["stack", "ls"]:
@@ -38,7 +32,6 @@ def errors_scenario(args, words) -> int:
     return 0
 
 
-# Commands that answer a `--format '{"ID":{{json .ID}},...}'` template.
 JSON_TABLES = {
     ("ps",): "ps.jsonl", ("container", "ls"): "ps.jsonl",
     ("images",): "images_table.jsonl", ("image", "ls"): "images_table.jsonl",
@@ -48,18 +41,16 @@ JSON_TABLES = {
 
 
 def json_template(args, words) -> Optional[int]:
-    """Fill a field-by-field JSON template like docker does; None if not one."""
     template = next((a for a in args if a.startswith('{"')), None)
     if template is None:
         return None
     words = [w for w in words if w != template]
     name = JSON_TABLES.get(tuple(words[:1])) or JSON_TABLES.get(tuple(words[:2]))
-    if name == "images_table.jsonl" and "CreatedAt" in template:  # image data, not a table
+    if name == "images_table.jsonl" and "CreatedAt" in template:
         name = "images_dangling.jsonl" if "dangling=true" in args else "images.jsonl"
     if name is None:
         return None
     fields = re.findall(r"\{\{json \.(\w+)\}\}", template)
-    # FAKE_OLD_DOCKER: a docker that lacks the fields, so dkview falls back.
     old = os.environ.get("FAKE_OLD_DOCKER")
     for line in fixture(name).splitlines():
         item = json.loads(line)
@@ -82,8 +73,6 @@ def main() -> int:
     words = [a for a in args if not a.startswith("-")]
     cmd = words[:2]
     json_format = "{{json .}}" in args
-    # "swarm" serves the second recording: several tags per repository,
-    # dangling images and failing services.
     swarm = os.environ.get("FAKE_SCENARIO") == "swarm"
 
     if os.environ.get("FAKE_SCENARIO") == "errors":
@@ -114,7 +103,7 @@ def main() -> int:
         sys.stdout.write(fixture("services_inspect.jsonl"))
     elif cmd[:1] == ["stats"]:
         if "--no-stream" not in args:
-            while True:  # real docker stats never exits on its own
+            while True:
                 time.sleep(1)
         sys.stdout.write(fixture("stats.txt"))
     elif cmd[:1] == ["ps"] and "-q" in args:
@@ -122,7 +111,6 @@ def main() -> int:
     elif cmd[:1] == ["ps"]:
         sys.stdout.write(fixture("ps_no_trunc.txt"))
     elif cmd[:1] == ["inspect"] and "--format" in args:
-        # Both containers run alpine (sha256:294b683cb724...).
         sys.stdout.write("sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6\n" * 2)
     elif cmd == ["service", "ls"]:
         sys.stdout.write(fixture("service_ls.txt"))

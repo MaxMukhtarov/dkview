@@ -1,5 +1,3 @@
-"""`dkview dash`: containers, services, problems and disk use on one screen."""
-
 from __future__ import annotations
 
 import json
@@ -34,7 +32,6 @@ def _json_lines(argv: List[str]) -> Optional[List[Dict[str, Any]]]:
 
 
 def collect() -> Dict[str, Any]:
-    """Ask docker for everything at once; `stats` alone takes ~2 seconds."""
     program = engine.name()
     commands = {
         "info": [program, "info", "--format", "{{json .}}"],
@@ -44,19 +41,19 @@ def collect() -> Dict[str, Any]:
                   fields_template(["ID", "CPUPerc", "MemUsage"])],
         "df": [program, "system", "df", "--format", "{{json .}}"],
     }
-    if not engine.is_podman([program]):  # podman has no swarm
+    if not engine.is_podman([program]):
         commands["services"] = [program, "service", "ls", "--format", "{{json .}}"]
     with ThreadPoolExecutor(len(commands)) as pool:
         futures = {k: pool.submit(_json_lines, v) for k, v in commands.items()}
         data = {k: f.result() for k, f in futures.items()}
-    if data["ps"] is None:  # docker too old for .State in a template
+    if data["ps"] is None:  # docker without .State
         data["ps"] = _json_lines([program, "ps", "-a", "--format", "{{json .}}"])
     data.setdefault("services", None)
     return data
 
 
 def _header(info: Dict[str, Any]) -> str:
-    if "host" in info and "version" in info:  # podman's layout
+    if "host" in info and "version" in info:
         host = info.get("host") or {}
         info = {"ServerVersion": (info.get("version") or {}).get("Version", "?"),
                 "Name": host.get("hostname", "?"), "NCPU": host.get("cpus", "?"),
@@ -111,8 +108,7 @@ def frame(opts: Options, width: Optional[int] = None) -> str:
     info = (data["info"] or [{}])[0]
     stats = {s.get("ID", "")[:12]: s for s in data["stats"] or []}
     services = data["services"] or []
-    # Swarm keeps the last few dead tasks of every service. Their health is the
-    # service's REPLICAS, so they would only repeat it, many times over.
+    # dead swarm tasks only repeat what REPLICAS already shows
     ps = [c for c in data["ps"] if c.get("State") == "running"
           or not is_task_container(c.get("Names", ""))]
     old_tasks = len(data["ps"]) - len(ps)

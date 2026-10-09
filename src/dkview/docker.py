@@ -1,5 +1,3 @@
-"""Understanding docker command lines: which subcommand, and how to run it."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,9 +5,7 @@ from typing import List, Sequence
 
 from . import engine
 
-# Options that take a separate value (`--context prod`, `-f file.yml`,
-# `--filter status=exited`). The value is skipped when looking for the
-# subcommand words.
+# options whose value is a separate argument
 VALUE_OPTIONS = {
     "-c", "--context", "-H", "--host", "--config", "-l", "--log-level",
     "--tlscacert", "--tlscert", "--tlskey",
@@ -20,8 +16,7 @@ VALUE_OPTIONS = {
 
 LIST_VERBS = {"ls", "list"}
 
-# Commands whose output is a table. Anything not listed here (run, exec,
-# build, events, typos, --help...) runs straight through untouched.
+# everything else is passed through untouched
 TABLE_COMMANDS = {
     "ps": None, "images": None, "stats": None, "top": None,
     "history": None, "search": None,
@@ -46,7 +41,6 @@ INSPECT_OBJECTS = {"container", "image", "service", "network", "volume",
 
 LOG_OBJECTS = {"container", "service", "compose"}
 
-# Every top-level docker command, so `dkview ps` can mean `docker ps`.
 DOCKER_COMMANDS = {
     "attach", "build", "builder", "buildx", "commit", "compose", "config",
     "container", "context", "cp", "create", "diff", "events", "exec",
@@ -60,22 +54,16 @@ DOCKER_COMMANDS = {
 
 
 def is_docker(argv: Sequence[str]) -> bool:
-    """docker, or podman, which takes the same commands."""
     return bool(argv) and engine.kind(argv[0]) != ""
 
 
 def expand_shortcut(argv: List[str]) -> List[str]:
-    """`dkview ps -a` -> `docker ps -a` (or `podman ps -a`)."""
     if argv and argv[0] in DOCKER_COMMANDS:
         return [engine.name()] + argv
     return argv
 
 
 def words(argv: Sequence[str], limit: int = 2) -> List[str]:
-    """First non-option words after `docker`.
-
-    `docker --context prod service ls -q` -> ['service', 'ls']
-    """
     found: List[str] = []
     skip = False
     for arg in argv[1:]:
@@ -102,9 +90,8 @@ def user_chose_format(argv: Sequence[str]) -> bool:
 
 @dataclass
 class Kind:
-    """What dkview should do with a docker command."""
 
-    name: str  # "table", "stats", "logs", "inspect" or "passthrough"
+    name: str
 
 
 def classify(argv: Sequence[str]) -> Kind:
@@ -132,7 +119,6 @@ def classify(argv: Sequence[str]) -> Kind:
     if verbs is not None and second not in verbs:
         return Kind("passthrough")
 
-    # Layouts that are not a single table.
     if [first, second] == ["system", "df"] and has_option(argv, "-v", "--verbose"):
         return Kind("passthrough")
     if has_option(argv, "--tree"):
@@ -144,7 +130,6 @@ def classify(argv: Sequence[str]) -> Kind:
 
 
 def _is_table_format(argv: Sequence[str]) -> bool:
-    """`--format 'table {{.Names}}\t{{.Status}}'` still prints a table."""
     for i, arg in enumerate(argv):
         value = None
         if arg == "--format" and i + 1 < len(argv):
@@ -156,8 +141,6 @@ def _is_table_format(argv: Sequence[str]) -> bool:
     return False
 
 
-# Commands that accept --no-trunc. dkview asks for full values and wraps
-# them itself, then shortens IDs back to docker's usual 12 characters.
 NO_TRUNC = {
     ("ps",), ("images",), ("history",), ("search",),
     ("container", "ls"), ("container", "ps"), ("container", "list"),
@@ -173,16 +156,13 @@ def supports_no_trunc(argv: Sequence[str]) -> bool:
 
 
 def prepare(argv: Sequence[str], trunc: bool) -> List[str]:
-    """Flags that make docker print one complete snapshot we can format."""
     argv = list(argv)
     kind = classify(argv)
 
-    # `docker stats` refreshes forever by default; take a single sample.
     if kind.name == "stats" and "--no-stream" not in argv:
         argv.append("--no-stream")
 
-    # Full values so COMMAND or ERROR are not cut short; dkview wraps
-    # long values itself.
+    # wrap long values ourselves instead of docker's truncation
     if (kind.name == "table" and supports_no_trunc(argv) and not trunc
             and not has_option(argv, "--no-trunc", "--format", "-q", "--quiet")):
         argv.append("--no-trunc")

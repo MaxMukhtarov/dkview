@@ -1,8 +1,3 @@
-"""Which container engine to run: docker, or podman where docker is missing.
-
-DKVIEW_ENGINE=podman (or a full path) picks one explicitly.
-"""
-
 from __future__ import annotations
 
 import os
@@ -18,11 +13,10 @@ def name() -> str:
     for engine in ENGINES:
         if shutil.which(engine):
             return engine
-    return "docker"   # not installed: let docker's own "not found" error show
+    return "docker"
 
 
 def kind(program: str) -> str:
-    """'docker', 'podman' or '' for /usr/bin/podman, docker.exe, ..."""
     base = program.replace("\\", "/").rsplit("/", 1)[-1].lower()
     for ext in (".exe", ".cmd", ".bat"):
         if base.endswith(ext):

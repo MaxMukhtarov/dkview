@@ -1,9 +1,3 @@
-"""`dkview errors`: errors and warnings from logs, counted and grouped.
-
-    dkview errors                      every service and container on the host
-    dkview errors orders --since 2d one stack, a service or a container
-"""
-
 from __future__ import annotations
 
 import json
@@ -29,19 +23,14 @@ from .images import global_options
 from .logs import level_of
 
 DEFAULT_SINCE = "30m"
-TOP = 10  # message groups shown per source unless --full
+TOP = 10
 
-# ------------------------------------------------------------------ time
 
 _DURATION_RE = re.compile(r"(\d+(?:\.\d+)?)\s*(w|d|h|m|s)", re.IGNORECASE)
 _DURATION_UNITS = {"w": 604800, "d": 86400, "h": 3600, "m": 60, "s": 1}
 
 
 def parse_since(text: str) -> Optional[float]:
-    """'30m' -> 1800.0, '2d' -> 172800.0, '1h30m' -> 5400.0; else None.
-
-    docker only understands s/m/h, so days and weeks are converted here.
-    """
     compact = text.replace(" ", "")
     if not compact or _DURATION_RE.sub("", compact):
         return None
@@ -50,7 +39,6 @@ def parse_since(text: str) -> Optional[float]:
 
 
 def since_for_docker(text: str) -> str:
-    """'2d' -> '172800s'; timestamps and anything else are passed through."""
     seconds = parse_since(text)
     return f"{int(seconds)}s" if seconds is not None else text
 
@@ -63,7 +51,6 @@ _STAMP_RE = re.compile(r"^(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.\d+)?(Z|[+-]\d\d:
 
 
 def split_stamp(line: str) -> Tuple[Optional[datetime], str]:
-    """Separate the timestamp `--timestamps` puts in front of each line."""
     m = _STAMP_RE.match(line)
     if not m:
         return None, line
@@ -76,13 +63,9 @@ def split_stamp(line: str) -> Tuple[Optional[datetime], str]:
     return when, line[m.end():]
 
 
-# ------------------------------------------------------------- messages
-
-# Lines with no level word that still clearly report a failure.
 _IMPLICIT_ERROR_RE = re.compile(
     r"\b[A-Z][\w.]*(?:Exception|Error)\b|^Traceback \(most recent call last\)|^panic: ")
 
-# A timestamp or level an app writes at the start of its own lines.
 _APP_PREFIX_RE = re.compile(
     r"^\s*(?:\[?\d{4}-\d\d-\d\d[T ][\d:.,]+(?:Z|[+-]\d\d:?\d\d)?\]?\s*)+")
 
@@ -91,7 +74,7 @@ _VARIABLE_PARTS = [
     (re.compile(r"\b\d{1,3}(?:\.\d{1,3}){3}(?::\d+)?\b"), "<ip>"),
     (re.compile(r"\b(?=[0-9a-f]*\d)[0-9a-f]{6,}\b", re.I), "#"),
     (re.compile(r"\b\d{4}-\d\d-\d\d[T ][\d:.,]+(?:Z|[+-]\d\d:?\d\d)?"), "<time>"),
-    (re.compile(r"\w*\d[\w.]*"), "#"),  # any word with a digit in it
+    (re.compile(r"\w*\d[\w.]*"), "#"),
 ]
 
 
@@ -109,7 +92,6 @@ def clean_message(message: str) -> str:
 
 
 def signature(message: str) -> str:
-    """What stays the same between repeats: numbers, ids and IPs removed."""
     text = clean_message(message)
     for pattern, placeholder in _VARIABLE_PARTS:
         text = pattern.sub(placeholder, text)
@@ -119,7 +101,7 @@ def signature(message: str) -> str:
 @dataclass
 class Group:
     level: str
-    message: str            # the most recent example
+    message: str
     count: int = 0
     first: Optional[datetime] = None
     last: Optional[datetime] = None
@@ -128,11 +110,11 @@ class Group:
 @dataclass
 class Source:
     name: str
-    kind: str               # "service" or "container"
+    kind: str
     command: List[str]
     groups: Dict[str, Group] = field(default_factory=dict)
     lines: int = 0
-    problem: str = ""       # docker's own complaint, if the logs couldn't be read
+    problem: str = ""
 
     def count(self, which: str) -> int:
         return sum(g.count for g in self.groups.values() if g.level == which)
@@ -153,7 +135,7 @@ class Source:
     def add(self, line: str, grep: Optional["re.Pattern[str]"] = None) -> None:
         when, message = split_stamp(line)
         if when is None:
-            # Every real log line has a timestamp; this one is from docker.
+            # no timestamp: docker's own message
             if line.strip():
                 self.problem = (self.problem + " " + line.strip()).strip()
             return
@@ -172,21 +154,17 @@ class Source:
             group.first = when
 
 
-# `docker service logs` sometimes prints everything and then never exits
-# (a swarm bug with tasks whose containers are gone). When no line has
-# arrived for this long, what came so far is counted and docker is stopped.
-# The first line may take longer: docker reads old log files to find --since.
+# `docker service logs` can hang after the last line when task containers are gone
 IDLE_SECONDS = 8.0
 FIRST_LINE_SECONDS = 30.0
 
 
 def read(source: Source, grep: Optional["re.Pattern[str]"] = None,
          idle: float = IDLE_SECONDS, first: float = FIRST_LINE_SECONDS) -> Source:
-    """Stream the logs (they can be large) and count them line by line."""
     try:
         process = subprocess.Popen(
             source.command, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # apps log to stderr too
+            stderr=subprocess.STDOUT,
             text=True, encoding="utf-8", errors="replace")
     except FileNotFoundError:
         source.problem = f"{source.command[0]}: command not found"
@@ -219,8 +197,6 @@ def read(source: Source, grep: Optional["re.Pattern[str]"] = None,
     return source
 
 
-# ------------------------------------------------------------ resolving
-
 def _json_lines(text: str) -> List[dict]:
     items = []
     for line in text.splitlines():
@@ -232,7 +208,6 @@ def _json_lines(text: str) -> List[dict]:
 
 
 def _labels(text: object) -> Dict[str, str]:
-    """docker gives "a=1,b=2"; podman gives {"a": "1"} or null."""
     if isinstance(text, dict):
         return {str(k): str(v) for k, v in text.items()}
     pairs = (item.partition("=") for item in str(text or "").split(","))
@@ -242,8 +217,8 @@ def _labels(text: object) -> Dict[str, str]:
 @dataclass
 class Host:
     stacks: List[str]
-    services: List[dict]     # {"Name", "ID"}
-    containers: List[dict]   # {"Names", "ID", "Labels", ...}
+    services: List[dict]
+    containers: List[dict]
 
     @classmethod
     def load(cls, base: List[str]) -> "Host":
@@ -283,10 +258,6 @@ def _by_name_or_id(items: List[dict], target: str, name_key: str) -> List[dict]:
 
 def resolve(host: Host, base: List[str], targets: Sequence[str],
             since: str) -> Tuple[List[Source], List[str]]:
-    """Turn names or IDs into log sources; also return the ones not found.
-
-    A stack becomes all of its services, then services, then containers.
-    """
     sources: "OrderedDict[Tuple[str, str], Source]" = OrderedDict()
     missing: List[str] = []
 
@@ -315,11 +286,6 @@ def resolve(host: Host, base: List[str], targets: Sequence[str],
 
 
 def everything(host: Host, base: List[str], since: str) -> List[Source]:
-    """Every service, plus the containers that aren't part of one.
-
-    Swarm task containers are skipped when their service is covered, so the
-    same lines aren't counted twice.
-    """
     sources = [_service_source(base, s["Name"], since) for s in host.services]
     for c in host.containers:
         if host.swarm and "com.docker.swarm.service.name" in _labels(c.get("Labels", "")):
@@ -327,8 +293,6 @@ def everything(host: Host, base: List[str], since: str) -> List[Source]:
         sources.append(_container_source(base, c.get("Names", ""), since))
     return sources
 
-
-# ------------------------------------------------------------- rendering
 
 def plural(n: int, word: str) -> str:
     return f"{n} {word}" if n == 1 else f"{n} {word}s"

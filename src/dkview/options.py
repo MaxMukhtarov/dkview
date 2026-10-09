@@ -1,5 +1,3 @@
-"""Settings shared by every feature, filled in from the command line."""
-
 from __future__ import annotations
 
 import re

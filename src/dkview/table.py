@@ -1,5 +1,3 @@
-"""The Table model and parsers that turn command output into one."""
-
 from __future__ import annotations
 
 import re
@@ -15,7 +13,6 @@ class Table:
     rows: List[List[str]] = field(default_factory=list)
 
     def column(self, name: str) -> Optional[int]:
-        """Index of the column with this exact header (case-insensitive)."""
         name = name.upper()
         for i, header in enumerate(self.headers):
             if header.upper() == name:
@@ -23,19 +20,10 @@ class Table:
         return None
 
 
-# A header is a run of words separated by single spaces ("CONTAINER ID");
-# columns are separated by two or more spaces.
 _HEADER_RE = re.compile(r"\S+(?: \S+)*")
 
 
 def parse_aligned(lines: Sequence[str]) -> Optional[Table]:
-    """Parse column-aligned output (docker, kubectl, any Go tabwriter).
-
-    Column boundaries come from the header's positions, adjusted to the
-    nearest character position that is blank on every row. That keeps
-    empty cells in place (a container with no PORTS) and also handles
-    right-aligned columns such as SIZE in newer `docker images`.
-    """
     lines = [strip(line).rstrip() for line in lines]
 
     header_index = next(
@@ -65,13 +53,10 @@ def _column_bounds(spans: List[Tuple[int, int]], body: List[str]) -> List[int]:
 
     bounds = [0]
     for (start, end), (next_start, next_end) in zip(spans, spans[1:]):
-        # Prefer a blank position in the gap between the two headers,
-        # closest to where the next header starts.
         candidates = range(next_start, end - 1, -1)
         boundary = next((p for p in candidates if blank(p)), None)
 
         if boundary is None:
-            # A value overflows its header; look a bit further either way.
             wider = sorted(range(start + 1, next_end),
                            key=lambda p: abs(p - next_start))
             boundary = next((p for p in wider if blank(p)), next_start)
@@ -86,7 +71,6 @@ def _slice(line: str, bounds: List[int]) -> List[str]:
 
 
 def parse_whitespace(lines: Sequence[str]) -> Optional[Table]:
-    """Fallback for output whose columns are separated by single spaces."""
     lines = [strip(line).rstrip() for line in lines if line.strip()]
     if len(lines) < 2:
         return None

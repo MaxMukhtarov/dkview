@@ -1,5 +1,3 @@
-"""`docker logs` with lines colored by level and an optional --grep filter."""
-
 from __future__ import annotations
 
 import re
@@ -14,7 +12,6 @@ from ..options import Options
 _LEVEL_RE = re.compile(
     r"\b(FATAL|PANIC|CRIT(?:ICAL)?|ERROR|ERR|EROR|FAIL(?:ED|URE)?|WARN(?:ING)?|WRN|"
     r"INFO|INF|NOTICE|DEBUG|DBG|TRACE|TRC)\b"
-    # level=error, "level":"warn", [error]
     r"|\blevel\s*[=:]\s*\"?(\w+)"
     r"|\"(?:level|severity)\"\s*:\s*\"(\w+)\""
     r"|\[(error|warn(?:ing)?|info|debug)\]",
@@ -25,7 +22,6 @@ _LEADING_TIME_RE = re.compile(
     r"^(\d{4}-\d\d-\d\d[T ]\d\d:\d\d:\d\d(?:[.,]\d+)?(?:Z|[+-]\d\d:?\d\d)?)"
 )
 
-# `docker compose logs` prefixes each line with "service-1  | ".
 _COMPOSE_PREFIX_RE = re.compile(r"^(\S+\s+\| )")
 _PREFIX_COLORS = [CYAN, MAGENTA, BLUE, GREEN, YELLOW]
 
@@ -65,7 +61,6 @@ def colorize(line: str, grep: Optional["re.Pattern[str]"] = None) -> str:
         stamp, line = paint(m.group(1), DIM), line[m.end():]
 
     if grep:
-        # Highlight matches, then restore the line's own color after each.
         base = {"error": RED, "warn": YELLOW, "debug": DIM}.get(level or "", "")
         line = grep.sub(lambda g: paint(g.group(0), REVERSE, BOLD) + base, line)
 
@@ -87,7 +82,7 @@ def run(argv: Sequence[str], opts: Options) -> int:
             list(argv),
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # containers often log to stderr
+            stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
             errors="replace",
@@ -110,6 +105,5 @@ def run(argv: Sequence[str], opts: Options) -> int:
         process.terminate()
         return 130
     except BrokenPipeError:
-        # `dkview docker logs web | head` closed the pipe early.
         process.terminate()
         return 0

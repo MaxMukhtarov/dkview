@@ -2,7 +2,6 @@ from dkview.table import parse, parse_aligned
 
 
 def test_empty_ports_cell_stays_in_its_column(fixture_lines):
-    # The bug from the original screenshot: NAMES slid into PORTS.
     table = parse_aligned(fixture_lines("ps_screenshot.txt"))
     ports = table.column("PORTS")
     names = table.column("NAMES")
@@ -19,7 +18,7 @@ def test_multi_word_headers(fixture_lines):
 
 
 def test_right_aligned_size_columns(fixture_lines):
-    # docker 29 `images` right-aligns DISK USAGE and CONTENT SIZE.
+    # docker 29 right-aligns sizes
     table = parse_aligned(fixture_lines("images_v29.txt"))
     assert table.headers == ["IMAGE", "ID", "DISK USAGE", "CONTENT SIZE", "EXTRA"]
     sizes = [row[table.column("DISK USAGE")] for row in table.rows]
@@ -40,7 +39,6 @@ def test_value_wider_than_its_header():
         "1    a-very-long-service-name   global",
         "2    b      replicated",
     ]
-    # Not tabwriter-aligned on purpose: the long name overflows NAME.
     table = parse_aligned(lines)
     assert [r[0] for r in table.rows] == ["1", "2"]
 

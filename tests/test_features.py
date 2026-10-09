@@ -27,7 +27,7 @@ def test_log_coloring_keeps_text_and_highlights_grep():
         out = logs.colorize("web-1  | 2026-10-06T08:00:00Z WARN slow query",
                             re.compile("slow", re.I))
         assert strip(out) == "web-1  | 2026-10-06T08:00:00Z WARN slow query"
-        assert "\x1b[7m" in out  # highlighted match
+        assert "\x1b[7m" in out
     finally:
         colors.enabled = False
 

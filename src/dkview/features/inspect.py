@@ -1,5 +1,3 @@
-"""`docker inspect` as a short summary of what matters, or as a colored tree."""
-
 from __future__ import annotations
 
 import json
@@ -16,11 +14,8 @@ from ..runner import capture
 Section = Tuple[str, List[Tuple[str, str]]]
 
 
-# ------------------------------------------------------------------ tree
-
 def tree(value: Any, name: str = "", prefix: str = "", last: bool = True,
          top: bool = True) -> List[str]:
-    """Render JSON as an indented tree with colored keys and values."""
     lines: List[str] = []
     branch = "" if top else ("└─ " if last else "├─ ")
     label = paint(name, CYAN) if name else ""
@@ -63,8 +58,6 @@ def _scalar(value: Any) -> str:
         return paint("{}", DIM)
     return paint(str(value), GREEN) if value != "" else paint('""', DIM)
 
-
-# --------------------------------------------------------------- helpers
 
 def _get(obj: Any, path: str, default: Any = None) -> Any:
     for key in path.split("."):
@@ -138,8 +131,6 @@ def _cmd(*parts: Any) -> str:
             words.append(str(part))
     return " ".join(words)
 
-
-# ------------------------------------------------------------- summaries
 
 def container_summary(c: Dict[str, Any]) -> Tuple[str, List[Section]]:
     name = c.get("Name", "").lstrip("/")
@@ -298,8 +289,6 @@ def render_summary(title: str, sections: List[Section]) -> str:
         out += ["  " + line for line in render_plain_rows(rows)]
     return "\n".join(out)
 
-
-# ------------------------------------------------------------------- run
 
 def run(argv: Sequence[str], opts: Options) -> int:
     result = capture(argv)

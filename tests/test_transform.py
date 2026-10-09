@@ -69,7 +69,7 @@ def test_tidy_keeps_a_script_command_on_one_line():
     short, plain = table.rows[0][0], table.rows[1][0]
     assert "\n" not in short and len(short) <= 60
     assert short.startswith('"sh -c') and short.endswith('…"')
-    assert plain == '"/app/api.sh"'          # short commands are left alone
+    assert plain == '"/app/api.sh"'
     table = Table(["COMMAND"], [[script]])
     tidy(table, humanize=True, short=False, strip_digests=False, full=True)
     assert table.rows[0][0] == ('"sh -c \'i=0 while :; do echo hello world and good'

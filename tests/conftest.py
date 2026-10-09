@@ -15,8 +15,6 @@ sys.path.insert(0, str(ROOT / "src"))
 
 @pytest.fixture(autouse=True)
 def _run_outside_the_project(tmp_path, monkeypatch):
-    """Child processes start in a temp folder, not in the project folder,
-    which may sit on a network mount where `sh` can fail to read its cwd."""
     monkeypatch.chdir(tmp_path)
 
 
@@ -29,7 +27,6 @@ def fixture_lines():
 
 @pytest.fixture
 def fake_docker(tmp_path):
-    """Put a fake `docker` first on PATH; returns a helper to run dkview."""
     if os.name == "nt":
         pytest.skip("the fake docker is a shell script")
     bin_dir = tmp_path / "bin"

@@ -1,5 +1,3 @@
-"""Sizes and times as docker prints them, and back."""
-
 from __future__ import annotations
 
 import re
@@ -13,7 +11,6 @@ _SIZE_UNITS = {
 
 
 def parse_size(text: str) -> float:
-    """'281MB' -> 281000000.0; unknown text -> 0."""
     m = re.match(r"^\s*(\d+(?:\.\d+)?)\s*([kmgt]?i?b)\b", text or "", re.IGNORECASE)
     if not m:
         return 0.0
@@ -21,7 +18,6 @@ def parse_size(text: str) -> float:
 
 
 def human_size(n: float) -> str:
-    """Decimal units, like docker: 281000000 -> '281MB'."""
     size = float(n)
     for unit in ("B", "kB", "MB", "GB", "TB"):
         if size < 1000 or unit == "TB":
@@ -33,7 +29,6 @@ def human_size(n: float) -> str:
 
 
 def parse_docker_time(text: str) -> Optional[datetime]:
-    """'2026-09-17 20:37:20 +0000 UTC' -> aware datetime."""
     m = re.match(r"(\d{4}-\d\d-\d\d \d\d:\d\d:\d\d) ([+-]\d{4})", text or "")
     if not m:
         return None

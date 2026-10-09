@@ -1,11 +1,3 @@
-"""Reading docker list commands as JSON instead of column-aligned text.
-
-Each line docker prints for a `--format` template is one JSON object, so
-values with spaces, empty cells and right-aligned numbers can't shift
-into the wrong column. The table keeps docker's own headers and order.
-Old docker versions, or commands not listed here, use the text parser.
-"""
-
 from __future__ import annotations
 
 import json
@@ -14,7 +6,6 @@ from typing import Dict, List, Optional, Sequence, Tuple
 from . import docker
 from .table import Table
 
-# (header docker prints, field in the --format template)
 Column = Tuple[str, str]
 
 CONTAINERS: List[Column] = [
@@ -57,7 +48,6 @@ LAYOUTS: Dict[Tuple[str, ...], List[Column]] = {
 }
 
 def layout(argv: Sequence[str]) -> Optional[List[Column]]:
-    """The columns to ask for, or None to use the text parser."""
     if not docker.is_docker(argv) or docker.has_option(argv, "--format", "-q", "--quiet"):
         return None
     w = tuple(docker.words(argv))
@@ -75,16 +65,11 @@ def layout(argv: Sequence[str]) -> Optional[List[Column]]:
 def _fields(columns: List[Column]) -> List[str]:
     fields = [field for _, field in columns]
     if columns[:2] == NODES[:2]:
-        fields.append("Self")  # not shown as a column; marks the current node
+        fields.append("Self")
     return fields
 
 
 def fields_template(fields: Sequence[str]) -> str:
-    """One JSON object per line with only these fields.
-
-    `{{json .}}` would also make `docker ps` measure every container's
-    size, which is slow, so the fields are named one by one.
-    """
     return "{" + ",".join(f'"{f}":{{{{json .{f}}}}}' for f in fields) + "}"
 
 
@@ -105,7 +90,6 @@ def _text(value: object) -> str:
 
 
 def to_table(columns: List[Column], output: str) -> Optional[Table]:
-    """Build the table docker would have printed; None if it isn't JSON."""
     items = []
     for line in output.splitlines():
         if not line.strip():
@@ -123,9 +107,8 @@ def to_table(columns: List[Column], output: str) -> Optional[Table]:
     for item in items:
         row = [_text(item.get(field)) for _, field in columns]
         if columns[:2] == NODES[:2] and item.get("Self") is True:
-            row[0] += " *"   # docker marks the node you're on
+            row[0] += " *"
         if columns[:2] == TASKS[:2]:
-            # Older tasks of the same slot, as docker draws them.
             name = row[1]
             if name and name == previous_task:
                 row[1] = "\\_ " + name
@@ -135,6 +118,5 @@ def to_table(columns: List[Column], output: str) -> Optional[Table]:
 
 
 def is_format_error(stderr: str) -> bool:
-    """docker didn't understand the template: too old, or a field it lacks."""
     text = stderr.lower()
     return "template" in text or "can't evaluate field" in text or "--format" in text

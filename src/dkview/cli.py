@@ -1,5 +1,3 @@
-"""Command-line entry point: decide what to do with the command given."""
-
 from __future__ import annotations
 
 import argparse
@@ -38,7 +36,6 @@ the DKVIEW_OPTS environment variable, e.g. DKVIEW_OPTS="--short".
 """
 
 
-# Commands that are dkview's own rather than docker's.
 OWN_COMMANDS = {"dash", "clean", "doctor", "errors", "shell-init"}
 
 
@@ -148,7 +145,7 @@ def run(argv: Sequence[str]) -> int:
         return run_errors(parser, command[1:], opts)
 
     if command[0] in OWN_COMMANDS and len(command) > 1 and command[0] != "shell-init":
-        # `dkview clean --keep 5`: options after dkview's own commands are dkview's.
+        # e.g. `dkview clean --keep 5`
         before = list(argv)[:len(argv) - len(args.command)]
         return run(before + command[1:] + [command[0]])
 
@@ -185,7 +182,7 @@ def run(argv: Sequence[str]) -> int:
             return live.run(tables.snapshot(command, opts), " ".join(command), opts.interval)
         return tables.run(command, opts)
     if kind == "table" and images.is_image_list(command):
-        if "--group" in command:  # also accepted after the command
+        if "--group" in command:
             command = [a for a in command if a != "--group"]
             opts.group = True
         if opts.group:
@@ -196,7 +193,6 @@ def run(argv: Sequence[str]) -> int:
 
 
 def run_errors(parser: argparse.ArgumentParser, rest: List[str], opts: Options) -> int:
-    """`dkview errors [TARGET...]`: targets and options can be mixed freely."""
     sub = argparse.ArgumentParser(prog="dkview errors", description=errors.__doc__,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
     sub.add_argument("targets", nargs="*", metavar="NAME",
@@ -251,7 +247,6 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     except KeyboardInterrupt:
         return 130
     except BrokenPipeError:
-        # Output piped into `head` or `less` that quit early.
         devnull = os.open(os.devnull, os.O_WRONLY)
         os.dup2(devnull, sys.stdout.fileno())
         return 0

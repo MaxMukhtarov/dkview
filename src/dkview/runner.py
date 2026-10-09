@@ -1,5 +1,3 @@
-"""Running commands, either captured for formatting or attached to the terminal."""
-
 from __future__ import annotations
 
 import subprocess
@@ -23,7 +21,7 @@ def capture(argv: Sequence[str]) -> Result:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            encoding="utf-8",  # what docker writes, whatever the local code page
+            encoding="utf-8",
             errors="replace",
         )
         return Result(process.returncode, process.stdout, process.stderr)
@@ -32,7 +30,6 @@ def capture(argv: Sequence[str]) -> Result:
 
 
 def passthrough(argv: Sequence[str]) -> int:
-    """Run a command attached to the terminal, exactly as if typed directly."""
     try:
         process = subprocess.Popen(list(argv))
     except FileNotFoundError:
@@ -42,5 +39,4 @@ def passthrough(argv: Sequence[str]) -> int:
         try:
             return process.wait()
         except KeyboardInterrupt:
-            # Ctrl+C reaches the child too; let it exit on its own terms.
             continue
