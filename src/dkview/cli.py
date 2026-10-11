@@ -113,7 +113,7 @@ def to_options(args: argparse.Namespace) -> Options:
         interval=max(0.5, args.interval),
         full=args.full,
         group=args.group,
-        keep=max(0, args.keep),
+        keep=args.keep,
         dry_run=args.dry_run,
         yes=args.yes,
         since=args.since,
@@ -130,6 +130,8 @@ def run(argv: Sequence[str]) -> int:
         colors.enabled = True
 
     try:
+        if args.keep < 0:
+            parser.error("--keep: must be 0 or more")
         opts = to_options(args)
     except re.error as error:
         parser.error(f"--grep: {error}")
@@ -192,8 +194,16 @@ def run(argv: Sequence[str]) -> int:
     return passthrough(command)
 
 
+ERRORS_HELP = """\
+errors and warnings from logs, counted and grouped.
+
+  dkview errors                     every service and container on the host
+  dkview errors orders --since 2d   one stack, a service or a container
+"""
+
+
 def run_errors(parser: argparse.ArgumentParser, rest: List[str], opts: Options) -> int:
-    sub = argparse.ArgumentParser(prog="dkview errors", description=errors.__doc__,
+    sub = argparse.ArgumentParser(prog="dkview errors", description=ERRORS_HELP,
                                   formatter_class=argparse.RawDescriptionHelpFormatter)
     sub.add_argument("targets", nargs="*", metavar="NAME",
                      help="stack, service or container name or ID (default: everything)")

@@ -89,3 +89,15 @@ def test_grep_finds_unused_images(fake_docker):
     result = fake_docker.run("--grep", "○", "images")
     assert "busybox" in result.stdout
     assert "│ ● " not in result.stdout
+
+
+def test_errors_help_has_examples(fake_docker):
+    result = fake_docker.run("errors", "--help")
+    assert "dkview errors orders --since 2d" in result.stdout
+
+
+def test_negative_keep_is_refused(fake_docker):
+    result = fake_docker.run("clean", "--keep", "-1")
+    assert result.returncode == 2
+    assert "--keep" in result.stderr
+    assert fake_docker.calls() == []
